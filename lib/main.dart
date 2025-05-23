@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'viewmodels/login_viewmodel.dart';
+import 'viewmodels/register_viewmodel.dart';
+import 'views/login_view.dart';
 
 void main() {
   runApp(const MyApp());
@@ -9,13 +13,19 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Login App',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => LoginViewModel()),
+        ChangeNotifierProvider(create: (_) => RegisterViewModel()),
+      ],
+      child: MaterialApp(
+        title: 'Login App',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+          useMaterial3: true,
+        ),
+        home: const LoginView(),
       ),
-      home: const LoginPage(),
     );
   }
 }
