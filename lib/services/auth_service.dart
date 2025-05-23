@@ -1,16 +1,31 @@
 import '../models/user_model.dart';
+import 'database_service.dart';
 
 class AuthService {
-  // TODO: Implement actual authentication logic with backend
-  Future<bool> login(String email, String password) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(seconds: 1));
-    return true;
+  final DatabaseService _dbService = DatabaseService();
+  bool _isInitialized = false;
+
+  Future<void> _ensureInitialized() async {
+    if (!_isInitialized) {
+      await _dbService.connect();
+      _isInitialized = true;
+    }
   }
 
   Future<bool> register(User user) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(seconds: 1));
-    return true;
+    await _ensureInitialized();
+    return await _dbService.registerUser(user);
+  }
+
+  Future<User?> login(String email, String password) async {
+    await _ensureInitialized();
+    return await _dbService.loginUser(email, password);
+  }
+
+  Future<void> logout() async {
+    if (_isInitialized) {
+      await _dbService.disconnect();
+      _isInitialized = false;
+    }
   }
 } 

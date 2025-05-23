@@ -15,10 +15,17 @@ class LoginViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final success = await _authService.login(email, password);
+      final user = await _authService.login(email, password);
       _isLoading = false;
       notifyListeners();
-      return success;
+      
+      if (user == null) {
+        _error = 'Invalid email or password';
+        notifyListeners();
+        return false;
+      }
+      
+      return true;
     } catch (e) {
       _isLoading = false;
       _error = e.toString();
