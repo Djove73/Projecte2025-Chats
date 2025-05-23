@@ -10,13 +10,25 @@ class RegisterViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  Future<bool> register(String email, String password, String name) async {
+  Future<bool> register(
+    String email,
+    String password,
+    String name,
+    DateTime birthDate,
+    bool acceptedTerms,
+  ) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final user = User(email: email, password: password, name: name);
+      final user = User(
+        email: email,
+        password: password,
+        name: name,
+        birthDate: birthDate,
+        acceptedTerms: acceptedTerms,
+      );
       final success = await _authService.register(user);
       _isLoading = false;
       notifyListeners();

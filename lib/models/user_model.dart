@@ -1,12 +1,16 @@
 class User {
   final String email;
   final String password;
-  final String? name;
+  final String name;
+  final DateTime birthDate;
+  final bool acceptedTerms;
 
   User({
     required this.email,
     required this.password,
-    this.name,
+    required this.name,
+    required this.birthDate,
+    required this.acceptedTerms,
   });
 
   Map<String, dynamic> toJson() {
@@ -14,6 +18,8 @@ class User {
       'email': email,
       'password': password,
       'name': name,
+      'birthDate': birthDate.toIso8601String(),
+      'acceptedTerms': acceptedTerms,
     };
   }
 
@@ -22,6 +28,8 @@ class User {
       email: json['email'],
       password: json['password'],
       name: json['name'],
+      birthDate: DateTime.parse(json['birthDate']),
+      acceptedTerms: json['acceptedTerms'],
     );
   }
 } 
