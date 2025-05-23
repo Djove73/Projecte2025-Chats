@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../models/user_model.dart';
 
 class LoginViewModel extends ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -9,7 +10,7 @@ class LoginViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  Future<bool> login(String email, String password) async {
+  Future<User?> login(String email, String password) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -22,15 +23,24 @@ class LoginViewModel extends ChangeNotifier {
       if (user == null) {
         _error = 'Invalid email or password';
         notifyListeners();
-        return false;
+        return null;
       }
       
-      return true;
+      return user;
     } catch (e) {
       _isLoading = false;
       _error = e.toString();
       notifyListeners();
-      return false;
+      return null;
+    }
+  }
+
+  Future<void> logout() async {
+    try {
+      await _authService.logout();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
     }
   }
 } 

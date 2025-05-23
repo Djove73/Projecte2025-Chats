@@ -1,10 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/user_model.dart';
+import '../viewmodels/login_viewmodel.dart';
 
 class HomeView extends StatelessWidget {
   final User user;
 
   const HomeView({super.key, required this.user});
+
+  Future<void> _handleLogout(BuildContext context) async {
+    final viewModel = context.read<LoginViewModel>();
+    await viewModel.logout();
+    if (context.mounted) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,9 +27,7 @@ class HomeView extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () {
-              Navigator.of(context).popUntil((route) => route.isFirst);
-            },
+            onPressed: () => _handleLogout(context),
           ),
         ],
       ),
