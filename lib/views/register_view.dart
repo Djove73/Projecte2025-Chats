@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/register_viewmodel.dart';
+import 'home_view.dart';
 
 class RegisterView extends StatefulWidget {
   const RegisterView({super.key});
@@ -58,7 +59,7 @@ class _RegisterViewState extends State<RegisterView> {
   void _handleRegister() async {
     if (_formKey.currentState!.validate() && _birthDate != null && _acceptedTerms) {
       final viewModel = context.read<RegisterViewModel>();
-      final success = await viewModel.register(
+      final user = await viewModel.register(
         _emailController.text,
         _passwordController.text,
         _nameController.text,
@@ -66,8 +67,13 @@ class _RegisterViewState extends State<RegisterView> {
         _acceptedTerms,
       );
 
-      if (success && mounted) {
-        Navigator.pop(context);
+      if (user != null && mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) => HomeView(user: user),
+          ),
+          (route) => false,
+        );
       }
     } else if (_birthDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(

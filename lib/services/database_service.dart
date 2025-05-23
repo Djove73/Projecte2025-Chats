@@ -5,24 +5,24 @@ import '../models/user_model.dart';
 
 class DatabaseService {
   static const String _connectionString = 'mongodb+srv://rogerjove2005:rogjov01@cluster0.rxxyf.mongodb.net/';
-  static const String _dbName = 'reds_app';
-  static const String _usersCollection = 'Users2';
+  static const String _dbName = 'Projecte2025Chats';
+  static const String _usersCollection = 'users';
   
   late Db _db;
   late DbCollection _users;
 
   Future<void> connect() async {
     try {
-      _db = await Db.create(_connectionString);
+      _db = await Db.create('$_connectionString$_dbName');
       await _db.open();
       
-      // Get or create the Users2 collection
+      // Get or create the users collection
       _users = _db.collection(_usersCollection);
       
       // Create indexes for better performance and data integrity
       await _createIndexes();
       
-      print('Connected to MongoDB and initialized Users2 collection');
+      print('Connected to MongoDB and initialized users collection');
     } catch (e) {
       print('Error connecting to MongoDB: $e');
       rethrow;
@@ -44,7 +44,7 @@ class DatabaseService {
         name: 'created_at_index'
       );
       
-      print('Created indexes for Users2 collection');
+      print('Created indexes for users collection');
     } catch (e) {
       print('Error creating indexes: $e');
       // Don't rethrow here as the collection might already have indexes

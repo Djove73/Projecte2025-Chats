@@ -10,7 +10,7 @@ class RegisterViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  Future<bool> register(
+  Future<User?> register(
     String email,
     String password,
     String name,
@@ -32,12 +32,16 @@ class RegisterViewModel extends ChangeNotifier {
       final success = await _authService.register(user);
       _isLoading = false;
       notifyListeners();
-      return success;
+      
+      if (success) {
+        return user;
+      }
+      return null;
     } catch (e) {
       _isLoading = false;
       _error = e.toString();
       notifyListeners();
-      return false;
+      return null;
     }
   }
 } 
