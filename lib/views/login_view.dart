@@ -130,10 +130,13 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
                                   width: 1,
                                 ),
                               ),
-                              child: const Icon(
-                                Icons.chat_bubble_outline,
-                                size: 60,
-                                color: Colors.blue,
+                              child: SizedBox(
+                                width: 60,
+                                height: 60,
+                                child: Image.asset(
+                                  'assets/APP_Icon.png',
+                                  fit: BoxFit.contain,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 20),
