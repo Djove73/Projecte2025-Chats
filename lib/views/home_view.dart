@@ -9,10 +9,21 @@ class HomeView extends StatelessWidget {
   const HomeView({super.key, required this.user});
 
   Future<void> _handleLogout(BuildContext context) async {
-    final viewModel = context.read<LoginViewModel>();
-    await viewModel.logout();
-    if (context.mounted) {
-      Navigator.of(context).popUntil((route) => route.isFirst);
+    try {
+      final viewModel = context.read<LoginViewModel>();
+      await viewModel.logout();
+      if (context.mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cerrar sesión: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -25,9 +36,22 @@ class HomeView extends StatelessWidget {
         backgroundColor: Colors.black,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => _handleLogout(context),
+          Consumer<LoginViewModel>(
+            builder: (context, viewModel, child) {
+              return IconButton(
+                icon: viewModel.isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Icon(Icons.logout),
+                onPressed: viewModel.isLoading ? null : () => _handleLogout(context),
+              );
+            },
           ),
         ],
       ),

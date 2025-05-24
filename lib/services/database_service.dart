@@ -52,7 +52,15 @@ class DatabaseService {
   }
 
   Future<void> disconnect() async {
-    await _db.close();
+    try {
+      if (_db.isConnected) {
+        await _db.close();
+        print('Successfully disconnected from MongoDB');
+      }
+    } catch (e) {
+      print('Error disconnecting from MongoDB: $e');
+      rethrow;
+    }
   }
 
   String _hashPassword(String password) {

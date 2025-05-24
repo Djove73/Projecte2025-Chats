@@ -36,11 +36,19 @@ class LoginViewModel extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
     try {
       await _authService.logout();
+      _isLoading = false;
+      notifyListeners();
     } catch (e) {
+      _isLoading = false;
       _error = e.toString();
       notifyListeners();
+      rethrow;
     }
   }
 } 

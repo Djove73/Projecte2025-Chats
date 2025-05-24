@@ -58,6 +58,19 @@ class _RegisterViewState extends State<RegisterView> {
 
   void _handleRegister() async {
     if (_formKey.currentState!.validate() && _birthDate != null && _acceptedTerms) {
+      // Calculate age
+      final age = DateTime.now().difference(_birthDate!).inDays ~/ 365;
+      
+      if (age < 18) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Debes ser mayor de 18 años para registrarte'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
       final viewModel = context.read<RegisterViewModel>();
       final user = await viewModel.register(
         _emailController.text,
@@ -77,11 +90,11 @@ class _RegisterViewState extends State<RegisterView> {
       }
     } else if (_birthDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select your birth date')),
+        const SnackBar(content: Text('Por favor selecciona tu fecha de nacimiento')),
       );
     } else if (!_acceptedTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please accept the terms and conditions')),
+        const SnackBar(content: Text('Por favor acepta los términos y condiciones')),
       );
     }
   }
