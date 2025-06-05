@@ -52,11 +52,6 @@ class _HomeViewState extends State<HomeView> {
   int _selectedIndex = 0;
 
   void _onNavTap(int index) {
-    if (index == 1) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => const SettingsView()),
-      );
-    }
     setState(() {
       _selectedIndex = index;
     });
@@ -121,20 +116,22 @@ class _HomeViewState extends State<HomeView> {
                   return _buildNewsCard(context, news: HomeView.newsSamples[index]);
                 },
               )
-            : const SizedBox.shrink(),
+            : SettingsView(user: widget.user),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-        onPressed: () {
-          // TODO: Implement new post or refresh
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Feature coming soon!')),
-          );
-        },
-        child: const Icon(Icons.add),
-        tooltip: 'New Post',
-      ),
+      floatingActionButton: _selectedIndex == 0
+          ? FloatingActionButton(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              onPressed: () {
+                // TODO: Implement new post or refresh
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Feature coming soon!')),
+                );
+              },
+              child: const Icon(Icons.add),
+              tooltip: 'New Post',
+            )
+          : null,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onNavTap,
