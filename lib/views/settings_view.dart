@@ -262,19 +262,31 @@ class _SettingsViewState extends State<SettingsView> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.all(16),
+          : Stack(
+              fit: StackFit.expand,
               children: [
-                _userCard(),
-                ListTile(
-                  leading: const Icon(Icons.brightness_6),
-                  title: const Text('Dark Mode'),
-                  trailing: Switch(
-                    value: isDark,
-                    onChanged: (value) {
-                      themeProvider.toggleTheme(value);
-                    },
-                  ),
+                Image.asset(
+                  'assets/background_sky.png',
+                  fit: BoxFit.cover,
+                ),
+                Container(
+                  color: Colors.black.withOpacity(0.25), // overlay for readability
+                ),
+                ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    _userCard(),
+                    ListTile(
+                      leading: const Icon(Icons.brightness_6),
+                      title: const Text('Dark Mode'),
+                      trailing: Switch(
+                        value: isDark,
+                        onChanged: (value) {
+                          themeProvider.toggleTheme(value);
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
