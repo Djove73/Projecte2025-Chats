@@ -15,11 +15,13 @@ class SettingsView extends StatefulWidget {
 class _SettingsViewState extends State<SettingsView> {
   late TextEditingController _nameController;
   late TextEditingController _emailController;
-  late TextEditingController _ageController;
+  DateTime? _birthDate;
   User? _user;
   bool _loading = true;
   bool _saving = false;
+  String? _error;
   final AuthService _authService = AuthService();
+  String? _editingField; // 'name', 'email', 'birthDate'
 
   @override
   void initState() {
@@ -29,21 +31,14 @@ class _SettingsViewState extends State<SettingsView> {
 
   Future<void> _fetchUser() async {
     setState(() => _loading = true);
-    // Always fetch the latest user data from DB
     final email = widget.user?.email;
     if (email != null) {
-      // Use loginUser with the current email and password (password not available, so fallback to widget.user)
-      // In a real app, you should have a getUserByEmail method. For now, use widget.user
       final user = widget.user;
       setState(() {
         _user = user;
         _nameController = TextEditingController(text: user?.name ?? '');
         _emailController = TextEditingController(text: user?.email ?? '');
-        _ageController = TextEditingController(
-          text: user != null && user.birthDate != null
-              ? (DateTime.now().year - user.birthDate.year).toString()
-              : '',
-        );
+        _birthDate = user?.birthDate;
         _loading = false;
       });
     } else {
@@ -51,18 +46,58 @@ class _SettingsViewState extends State<SettingsView> {
     }
   }
 
+  bool _validateFields() {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    if (_editingField == 'name' && name.isEmpty) {
+      setState(() => _error = 'Name cannot be empty');
+      return false;
+    }
+    final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+    if (_editingField == 'email' && !emailRegex.hasMatch(email)) {
+      setState(() => _error = 'Invalid email format');
+      return false;
+    }
+    if (_editingField == 'birthDate' && _birthDate == null) {
+      setState(() => _error = 'Birth date is required');
+      return false;
+    }
+    if (_editingField == 'birthDate') {
+      final minDate = DateTime.now().subtract(const Duration(days: 365 * 13));
+      if (_birthDate!.isAfter(minDate)) {
+        setState(() => _error = 'You must be at least 13 years old');
+        return false;
+      }
+    }
+    setState(() => _error = null);
+    return true;
+  }
+
+  Future<void> _pickBirthDate() async {
+    final now = DateTime.now();
+    final initial = _birthDate ?? DateTime(now.year - 18, now.month, now.day);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(1900),
+      lastDate: now,
+    );
+    if (picked != null) {
+      setState(() => _birthDate = picked);
+    }
+  }
+
   Future<void> _saveProfile() async {
     if (_user == null) return;
+    if (!_validateFields()) return;
     setState(() => _saving = true);
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
-    final age = int.tryParse(_ageController.text.trim() ?? '') ?? 0;
-    final birthDate = DateTime(DateTime.now().year - age, 1, 1);
     final success = await _authService.updateUser(
       _user!.email,
-      name: name,
-      newEmail: email,
-      birthDate: birthDate,
+      name: _editingField == 'name' ? name : null,
+      newEmail: _editingField == 'email' ? email : null,
+      birthDate: _editingField == 'birthDate' ? _birthDate : null,
     );
     setState(() => _saving = false);
     if (success) {
@@ -71,12 +106,13 @@ class _SettingsViewState extends State<SettingsView> {
       );
       setState(() {
         _user = User(
-          email: email,
+          email: _editingField == 'email' ? email : _user!.email,
           password: _user!.password,
-          name: name,
-          birthDate: birthDate,
+          name: _editingField == 'name' ? name : _user!.name,
+          birthDate: _editingField == 'birthDate' ? _birthDate! : _user!.birthDate,
           acceptedTerms: _user!.acceptedTerms,
         );
+        _editingField = null;
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -88,8 +124,132 @@ class _SettingsViewState extends State<SettingsView> {
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
-    _ageController.dispose();
     super.dispose();
+  }
+
+  Widget _userCard() {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 24),
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.person, color: Colors.blue, size: 32),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _editingField == 'name'
+                      ? TextField(
+                          controller: _nameController,
+                          autofocus: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Name',
+                            border: OutlineInputBorder(),
+                          ),
+                        )
+                      : Text(
+                          _user?.name ?? '',
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.blue),
+                  onPressed: () => setState(() => _editingField = 'name'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Icon(Icons.email, color: Colors.blue, size: 28),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _editingField == 'email'
+                      ? TextField(
+                          controller: _emailController,
+                          autofocus: true,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                            border: OutlineInputBorder(),
+                          ),
+                        )
+                      : Text(
+                          _user?.email ?? '',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.blue),
+                  onPressed: () => setState(() => _editingField = 'email'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Icon(Icons.cake, color: Colors.blue, size: 28),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _editingField == 'birthDate'
+                      ? InkWell(
+                          onTap: _pickBirthDate,
+                          child: InputDecorator(
+                            decoration: const InputDecoration(
+                              labelText: 'Birth Date',
+                              border: OutlineInputBorder(),
+                            ),
+                            child: Text(_birthDate == null
+                                ? 'Select birth date'
+                                : '${_birthDate!.year}-${_birthDate!.month.toString().padLeft(2, '0')}-${_birthDate!.day.toString().padLeft(2, '0')}'),
+                          ),
+                        )
+                      : Text(
+                          _user?.birthDate != null
+                              ? '${_user!.birthDate.year}-${_user!.birthDate.month.toString().padLeft(2, '0')}-${_user!.birthDate.day.toString().padLeft(2, '0')}'
+                              : '',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.blue),
+                  onPressed: () => setState(() => _editingField = 'birthDate'),
+                ),
+              ],
+            ),
+            if (_editingField != null) ...[
+              const SizedBox(height: 16),
+              if (_error != null)
+                Text(_error!, style: const TextStyle(color: Colors.red)),
+              Row(
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: _saving ? null : _saveProfile,
+                    icon: _saving
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.save),
+                    label: const Text('Save'),
+                  ),
+                  const SizedBox(width: 12),
+                  TextButton(
+                    onPressed: _saving ? null : () => setState(() => _editingField = null),
+                    child: const Text('Cancel'),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -105,6 +265,7 @@ class _SettingsViewState extends State<SettingsView> {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                _userCard(),
                 ListTile(
                   leading: const Icon(Icons.brightness_6),
                   title: const Text('Dark Mode'),
@@ -113,48 +274,6 @@ class _SettingsViewState extends State<SettingsView> {
                     onChanged: (value) {
                       themeProvider.toggleTheme(value);
                     },
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text('Profile', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Name',
-                    prefixIcon: Icon(Icons.person),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _ageController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Age',
-                    prefixIcon: Icon(Icons.cake),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton.icon(
-                  onPressed: _saving ? null : _saveProfile,
-                  icon: _saving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Icon(Icons.save),
-                  label: const Text('Save'),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
                   ),
                 ),
               ],
