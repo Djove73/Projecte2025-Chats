@@ -155,4 +155,28 @@ class DatabaseService {
       rethrow;
     }
   }
+
+  Future<bool> updateUser(String email, {String? name, String? newEmail, DateTime? birthDate}) async {
+    try {
+      final updateData = <String, dynamic>{};
+      if (name != null) updateData['name'] = name;
+      if (newEmail != null) updateData['email'] = newEmail;
+      if (birthDate != null) updateData['birthDate'] = birthDate.toIso8601String();
+      updateData['updatedAt'] = DateTime.now().toIso8601String();
+      // Build the modifier by chaining .set for each field
+      var modifier = modify;
+      updateData.forEach((key, value) {
+        modifier = modifier.set(key, value);
+      });
+      final result = await _users.update(
+        where.eq('email', email),
+        modifier,
+      );
+      // Check if any document was modified
+      return (result['nModified'] ?? result['n'] ?? 0) > 0;
+    } catch (e) {
+      print('Error updating user: $e');
+      rethrow;
+    }
+  }
 } 

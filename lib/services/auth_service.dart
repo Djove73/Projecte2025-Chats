@@ -28,4 +28,9 @@ class AuthService {
       _isInitialized = false;
     }
   }
+
+  Future<bool> updateUser(String email, {String? name, String? newEmail, DateTime? birthDate}) async {
+    await _ensureInitialized();
+    return await _dbService.updateUser(email, name: name, newEmail: newEmail, birthDate: birthDate);
+  }
 } 
