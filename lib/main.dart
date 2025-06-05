@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'viewmodels/login_viewmodel.dart';
 import 'viewmodels/register_viewmodel.dart';
 import 'views/login_view.dart';
+import 'viewmodels/theme_provider.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,63 +18,60 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => LoginViewModel()),
         ChangeNotifierProvider(create: (_) => RegisterViewModel()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
-      child: MaterialApp(
-        title: 'Login App',
-      theme: ThemeData(
-          useMaterial3: true,
-          brightness: Brightness.dark,
-          colorScheme: ColorScheme.dark(
-            primary: Colors.blue,
-            secondary: Colors.blueAccent,
-            surface: const Color(0xFF1A1A1A),
-            background: Colors.black,
-            error: Colors.red,
-          ),
-          scaffoldBackgroundColor: Colors.black,
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Colors.black,
-            elevation: 0,
-          ),
-          inputDecorationTheme: InputDecorationTheme(
-            filled: true,
-            fillColor: const Color(0xFF1A1A1A),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.blue, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.red, width: 2),
-      ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, _) {
+          return MaterialApp(
+            title: 'Login App',
+            themeMode: themeProvider.themeMode,
+            theme: ThemeData(
+              brightness: Brightness.light,
+              colorScheme: ColorScheme.light(
+                primary: Colors.blue,
+                secondary: Colors.blueAccent,
+                surface: const Color(0xFFF5F6FA),
+                background: Colors.white,
+                error: Colors.red,
               ),
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              scaffoldBackgroundColor: Colors.white,
+              appBarTheme: const AppBarTheme(
+                backgroundColor: Colors.white,
+                elevation: 0,
+                iconTheme: IconThemeData(color: Colors.blue),
+                titleTextStyle: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 20),
+              ),
+              cardColor: Colors.white,
+              floatingActionButtonTheme: const FloatingActionButtonThemeData(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
             ),
-          ),
-          textButtonTheme: TextButtonThemeData(
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.blue,
+            darkTheme: ThemeData(
+              brightness: Brightness.dark,
+              colorScheme: ColorScheme.dark(
+                primary: Colors.blue,
+                secondary: Colors.blueAccent,
+                surface: const Color(0xFF1A1A1A),
+                background: Colors.black,
+                error: Colors.red,
+              ),
+              scaffoldBackgroundColor: Colors.black,
+              appBarTheme: const AppBarTheme(
+                backgroundColor: Colors.black,
+                elevation: 0,
+                iconTheme: IconThemeData(color: Colors.blue),
+                titleTextStyle: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 20),
+              ),
+              cardColor: const Color(0xFF23242A),
+              floatingActionButtonTheme: const FloatingActionButtonThemeData(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
             ),
-          ),
-        ),
-        home: const LoginView(),
+            home: const LoginView(),
+          );
+        },
       ),
     );
   }

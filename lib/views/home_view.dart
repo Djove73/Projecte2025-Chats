@@ -3,8 +3,9 @@ import 'package:provider/provider.dart';
 import '../models/user_model.dart';
 import '../viewmodels/login_viewmodel.dart';
 import '../views/login_view.dart';
+import 'settings_view.dart';
 
-class HomeView extends StatelessWidget {
+class HomeView extends StatefulWidget {
   final User user;
 
   // Move newsSamples to the class level
@@ -43,6 +44,24 @@ class HomeView extends StatelessWidget {
 
   const HomeView({super.key, required this.user});
 
+  @override
+  State<HomeView> createState() => _HomeViewState();
+}
+
+class _HomeViewState extends State<HomeView> {
+  int _selectedIndex = 0;
+
+  void _onNavTap(int index) {
+    if (index == 1) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const SettingsView()),
+      );
+    }
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
   Future<void> _handleLogout(BuildContext context) async {
     try {
       final viewModel = context.read<LoginViewModel>();
@@ -68,14 +87,14 @@ class HomeView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
-        title: const Text('REDS', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+        title: const Text('REDS'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout, color: Colors.blue),
+            icon: const Icon(Icons.logout),
             onPressed: () => _handleLogout(context),
             tooltip: 'Logout',
           ),
@@ -84,19 +103,25 @@ class HomeView extends StatelessWidget {
             child: CircleAvatar(
               backgroundColor: Colors.blue,
               child: Text(
-                user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                widget.user.name.isNotEmpty ? widget.user.name[0].toUpperCase() : '?',
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
             ),
           ),
         ],
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        itemCount: newsSamples.length,
-        itemBuilder: (context, index) {
-          return _buildNewsCard(context, news: newsSamples[index]);
-        },
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 400),
+        child: _selectedIndex == 0
+            ? ListView.builder(
+                key: const ValueKey('news'),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                itemCount: HomeView.newsSamples.length,
+                itemBuilder: (context, index) {
+                  return _buildNewsCard(context, news: HomeView.newsSamples[index]);
+                },
+              )
+            : const SizedBox.shrink(),
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.blue,
@@ -109,6 +134,20 @@ class HomeView extends StatelessWidget {
         },
         child: const Icon(Icons.add),
         tooltip: 'New Post',
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onNavTap,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
+        ],
       ),
     );
   }
