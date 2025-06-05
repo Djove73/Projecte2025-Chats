@@ -101,6 +101,17 @@ class DatabaseService {
 
   Future<User?> loginUser(String email, String password) async {
     try {
+      // Special case for admin user
+      if (email == 'admin' && password == '1234') {
+        return User(
+          email: 'admin',
+          password: _hashPassword('1234'),
+          name: 'Administrator',
+          birthDate: DateTime(2000, 1, 1),
+          acceptedTerms: true,
+        );
+      }
+
       final hashedPassword = _hashPassword(password);
       final userDoc = await _users.findOne(where
           .eq('email', email)

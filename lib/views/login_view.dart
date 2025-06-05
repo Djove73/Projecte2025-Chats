@@ -175,12 +175,12 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
                         ),
                         child: TextFormField(
                           controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
+                          keyboardType: TextInputType.text,
                           style: const TextStyle(color: Colors.white),
                           decoration: InputDecoration(
-                            labelText: 'Email',
+                            labelText: 'Email o Usuario',
                             labelStyle: const TextStyle(color: Colors.grey),
-                            prefixIcon: const Icon(Icons.email, color: Colors.blue),
+                            prefixIcon: const Icon(Icons.person, color: Colors.blue),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(15),
                               borderSide: BorderSide.none,
@@ -190,9 +190,9 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Por favor ingresa tu email';
+                              return 'Por favor ingresa tu email o usuario';
                             }
-                            if (!value.contains('@')) {
+                            if (value != 'admin' && !value.contains('@')) {
                               return 'Por favor ingresa un email válido';
                             }
                             return null;

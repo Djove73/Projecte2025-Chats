@@ -30,12 +30,24 @@ class HomeView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text('Chat App'),
-        backgroundColor: Colors.black,
+        title: const Text('REDS'),
+        backgroundColor: Colors.white,
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined, color: Colors.black87),
+            onPressed: () {
+              // TODO: Implement notifications
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.message_outlined, color: Colors.black87),
+            onPressed: () {
+              // TODO: Implement messages
+            },
+          ),
           Consumer<LoginViewModel>(
             builder: (context, viewModel, child) {
               return IconButton(
@@ -45,10 +57,10 @@ class HomeView extends StatelessWidget {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.black87),
                         ),
                       )
-                    : const Icon(Icons.logout),
+                    : const Icon(Icons.logout, color: Colors.black87),
                 onPressed: viewModel.isLoading ? null : () => _handleLogout(context),
               );
             },
@@ -56,115 +68,156 @@ class HomeView extends StatelessWidget {
         ],
       ),
       body: SafeArea(
-        child: Column(
+        child: Row(
           children: [
-            // User Profile Section
+            // Left Sidebar
             Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[900],
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(20),
-                  bottomRight: Radius.circular(20),
-                ),
-              ),
-              child: Row(
+              width: 250,
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Column(
                 children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: Colors.blue,
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: const Icon(
-                      Icons.person,
-                      size: 40,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  // User Profile Section
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
                       children: [
-                        Text(
-                          user.name,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Icon(
+                            Icons.person,
+                            size: 24,
                             color: Colors.white,
                           ),
                         ),
-                        Text(
-                          user.email,
-                          style: TextStyle(
-                            color: Colors.grey[400],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                user.name,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                user.email,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(height: 20),
+                  const Divider(),
+                  _buildSidebarItem(Icons.home_outlined, 'Home', true),
+                  _buildSidebarItem(Icons.search_outlined, 'Search', false),
+                  _buildSidebarItem(Icons.group_outlined, 'Groups', false),
+                  _buildSidebarItem(Icons.people_outline, 'Friends', false),
+                  _buildSidebarItem(Icons.settings_outlined, 'Settings', false),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-            // Menu Options
+            // Main Content
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(16),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    // Create Post Section
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      color: Colors.white,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.blue,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Icon(
+                              Icons.person,
+                              size: 24,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[200],
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const TextField(
+                                decoration: InputDecoration(
+                                  hintText: "What's on your mind?",
+                                  border: InputBorder.none,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // News Feed
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: 5, // Example posts
+                      itemBuilder: (context, index) {
+                        return _buildPostCard();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Right Sidebar
+            Container(
+              width: 300,
+              color: Colors.white,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildMenuCard(
-                    context,
-                    'New Chat',
-                    Icons.chat_bubble_outline,
-                    Colors.blue,
-                    () {
-                      // TODO: Implement new chat
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('New chat feature coming soon!')),
-                      );
-                    },
+                  const Text(
+                    'Trending Topics',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 16),
-                  _buildMenuCard(
-                    context,
-                    'Group Chats',
-                    Icons.group_outlined,
-                    Colors.green,
-                    () {
-                      // TODO: Implement group chats
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Group chats feature coming soon!')),
-                      );
-                    },
+                  _buildTrendingTopic('#FlutterDev'),
+                  _buildTrendingTopic('#MobileApp'),
+                  _buildTrendingTopic('#Programming'),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Suggested Friends',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 16),
-                  _buildMenuCard(
-                    context,
-                    'Contacts',
-                    Icons.people_outline,
-                    Colors.orange,
-                    () {
-                      // TODO: Implement contacts
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Contacts feature coming soon!')),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  _buildMenuCard(
-                    context,
-                    'Settings',
-                    Icons.settings_outlined,
-                    Colors.purple,
-                    () {
-                      // TODO: Implement settings
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Settings feature coming soon!')),
-                      );
-                    },
-                  ),
+                  _buildSuggestedFriend('John Doe', 'Software Engineer'),
+                  _buildSuggestedFriend('Jane Smith', 'UI/UX Designer'),
                 ],
               ),
             ),
@@ -174,55 +227,172 @@ class HomeView extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuCard(
-    BuildContext context,
-    String title,
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return Card(
-      color: Colors.grey[900],
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
+  Widget _buildSidebarItem(IconData icon, String title, bool isSelected) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      child: ListTile(
+        leading: Icon(
+          icon,
+          color: isSelected ? Colors.blue : Colors.black87,
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: isSelected ? Colors.blue : Colors.black87,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+        onTap: () {
+          // TODO: Implement navigation
+        },
       ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(15),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
+    );
+  }
+
+  Widget _buildPostCard() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      color: Colors.white,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.blue,
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                child: const Icon(
+                  Icons.person,
+                  size: 24,
                   color: Colors.white,
                 ),
               ),
-              const Spacer(),
-              Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.grey[600],
-                size: 16,
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'John Doe',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    '2 hours ago',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          const Text(
+            'This is a sample post content. It can contain text, images, or other media.',
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _buildPostAction(Icons.thumb_up_outlined, 'Like'),
+              const SizedBox(width: 16),
+              _buildPostAction(Icons.comment_outlined, 'Comment'),
+              const SizedBox(width: 16),
+              _buildPostAction(Icons.share_outlined, 'Share'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPostAction(IconData icon, String label) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: Colors.grey[600]),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.grey[600],
+            fontSize: 14,
+          ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildTrendingTopic(String topic) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Icon(Icons.trending_up, size: 16, color: Colors.grey[600]),
+          const SizedBox(width: 8),
+          Text(
+            topic,
+            style: TextStyle(
+              color: Colors.grey[800],
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSuggestedFriend(String name, String occupation) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.blue,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Icon(
+              Icons.person,
+              size: 24,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  occupation,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              // TODO: Implement add friend
+            },
+            child: const Text('Add'),
+          ),
+        ],
       ),
     );
   }
