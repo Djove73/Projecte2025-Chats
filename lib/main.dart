@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'viewmodels/login_viewmodel.dart';
 import 'viewmodels/register_viewmodel.dart';
-import 'views/login_view.dart';
 import 'viewmodels/theme_provider.dart';
+import 'viewmodels/language_provider.dart';
+import 'views/login_view.dart';
 
 void main() {
   runApp(const MyApp());
@@ -19,12 +21,24 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => LoginViewModel()),
         ChangeNotifierProvider(create: (_) => RegisterViewModel()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => LanguageProvider()),
       ],
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, _) {
+      child: Consumer2<ThemeProvider, LanguageProvider>(
+        builder: (context, themeProvider, languageProvider, _) {
           return MaterialApp(
             title: 'Login App',
             themeMode: themeProvider.themeMode,
+            locale: languageProvider.currentLocale,
+            supportedLocales: const [
+              Locale('en'), // English
+              Locale('es'), // Spanish
+              Locale('ca'), // Catalan
+            ],
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
             theme: ThemeData(
               brightness: Brightness.light,
               colorScheme: ColorScheme.light(
@@ -113,8 +127,8 @@ class _LoginPageState extends State<LoginPage> {
           padding: const EdgeInsets.all(16.0),
           child: Form(
             key: _formKey,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const Icon(
@@ -129,7 +143,7 @@ class _LoginPageState extends State<LoginPage> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-            ),
+                  ),
                 ),
                 const SizedBox(height: 32),
                 TextFormField(

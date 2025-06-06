@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/theme_provider.dart';
+import '../viewmodels/language_provider.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 
@@ -127,125 +128,359 @@ class _SettingsViewState extends State<SettingsView> {
     super.dispose();
   }
 
+  bool _hoveringCard = false;
+  bool _hoveringEdit = false;
+
   Widget _userCard() {
-    return Card(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark
+        ? Colors.black.withOpacity(0.65)
+        : Colors.white.withOpacity(0.85);
+    final borderColor = isDark ? Colors.blue[900] : Colors.blue[200];
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hoveringCard = true),
+      onExit: (_) => setState(() => _hoveringCard = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        margin: const EdgeInsets.only(bottom: 24),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: borderColor!, width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? Colors.blue.withOpacity(_hoveringCard ? 0.25 : 0.15)
+                  : Colors.blue.withOpacity(_hoveringCard ? 0.18 : 0.10),
+              blurRadius: _hoveringCard ? 24 : 12,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildEditableRow(
+                icon: Icons.person,
+                label: 'Name',
+                value: _user?.name ?? '',
+                editing: _editingField == 'name',
+                controller: _nameController,
+                onEdit: () => setState(() => _editingField = 'name'),
+                onCancel: () => setState(() => _editingField = null),
+                onSave: _saveProfile,
+                saving: _saving,
+                error: _editingField == 'name' ? _error : null,
+                isDark: isDark,
+              ),
+              const SizedBox(height: 18),
+              _buildEditableRow(
+                icon: Icons.email,
+                label: 'Email',
+                value: _user?.email ?? '',
+                editing: _editingField == 'email',
+                controller: _emailController,
+                onEdit: () => setState(() => _editingField = 'email'),
+                onCancel: () => setState(() => _editingField = null),
+                onSave: _saveProfile,
+                saving: _saving,
+                error: _editingField == 'email' ? _error : null,
+                isDark: isDark,
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 18),
+              _buildBirthDateRow(isDark),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEditableRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    required bool editing,
+    required TextEditingController controller,
+    required VoidCallback onEdit,
+    required VoidCallback onCancel,
+    required VoidCallback onSave,
+    required bool saving,
+    String? error,
+    bool isDark = false,
+    TextInputType? keyboardType,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Icon(icon, color: Colors.blue, size: 28),
+        const SizedBox(width: 12),
+        Expanded(
+          child: editing
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: controller,
+                      autofocus: true,
+                      keyboardType: keyboardType,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: label,
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                    if (error != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(error, style: const TextStyle(color: Colors.red)),
+                      ),
+                    Row(
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: saving ? null : onSave,
+                          icon: saving
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                )
+                              : const Icon(Icons.save),
+                          label: const Text('Save'),
+                        ),
+                        const SizedBox(width: 10),
+                        TextButton(
+                          onPressed: saving ? null : onCancel,
+                          child: const Text('Cancel'),
+                        ),
+                      ],
+                    ),
+                  ],
+                )
+              : Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isDark ? Colors.white : Colors.black,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+        ),
+        MouseRegion(
+          onEnter: (_) => setState(() => _hoveringEdit = true),
+          onExit: (_) => setState(() => _hoveringEdit = false),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            decoration: BoxDecoration(
+              color: _hoveringEdit ? Colors.blue.withOpacity(0.12) : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.edit, color: Colors.blue),
+              onPressed: onEdit,
+              tooltip: 'Edit $label',
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBirthDateRow(bool isDark) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        const Icon(Icons.cake, color: Colors.blue, size: 28),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _editingField == 'birthDate'
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    InkWell(
+                      onTap: _pickBirthDate,
+                      borderRadius: BorderRadius.circular(8),
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Birth Date',
+                          border: OutlineInputBorder(),
+                        ),
+                        child: Text(_birthDate == null
+                            ? 'Select birth date'
+                            : '${_birthDate!.year}-${_birthDate!.month.toString().padLeft(2, '0')}-${_birthDate!.day.toString().padLeft(2, '0')}'),
+                      ),
+                    ),
+                    if (_error != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(_error!, style: const TextStyle(color: Colors.red)),
+                      ),
+                    Row(
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: _saving ? null : _saveProfile,
+                          icon: _saving
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                )
+                              : const Icon(Icons.save),
+                          label: const Text('Save'),
+                        ),
+                        const SizedBox(width: 10),
+                        TextButton(
+                          onPressed: _saving ? null : () => setState(() => _editingField = null),
+                          child: const Text('Cancel'),
+                        ),
+                      ],
+                    ),
+                  ],
+                )
+              : Text(
+                  _user?.birthDate != null
+                      ? '${_user!.birthDate.year}-${_user!.birthDate.month.toString().padLeft(2, '0')}-${_user!.birthDate.day.toString().padLeft(2, '0')}'
+                      : '',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isDark ? Colors.white : Colors.black,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+        ),
+        MouseRegion(
+          onEnter: (_) => setState(() => _hoveringEdit = true),
+          onExit: (_) => setState(() => _hoveringEdit = false),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            decoration: BoxDecoration(
+              color: _hoveringEdit ? Colors.blue.withOpacity(0.12) : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.edit, color: Colors.blue),
+              onPressed: () => setState(() => _editingField = 'birthDate'),
+              tooltip: 'Edit Birth Date',
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLanguageSection(bool isDark) {
+    final languageProvider = Provider.of<LanguageProvider>(context);
+    final currentLocale = languageProvider.currentLocale.languageCode;
+
+    return Container(
       margin: const EdgeInsets.only(bottom: 24),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.black.withOpacity(0.65) : Colors.white.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: isDark ? Colors.blue[900]! : Colors.blue[200]!, width: 2),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(22),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const Icon(Icons.person, color: Colors.blue, size: 32),
+                Icon(Icons.language, color: Colors.blue, size: 28),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: _editingField == 'name'
-                      ? TextField(
-                          controller: _nameController,
-                          autofocus: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Name',
-                            border: OutlineInputBorder(),
-                          ),
-                        )
-                      : Text(
-                          _user?.name ?? '',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.blue),
-                  onPressed: () => setState(() => _editingField = 'name'),
+                Text(
+                  'Language',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                const Icon(Icons.email, color: Colors.blue, size: 28),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _editingField == 'email'
-                      ? TextField(
-                          controller: _emailController,
-                          autofocus: true,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            border: OutlineInputBorder(),
-                          ),
-                        )
-                      : Text(
-                          _user?.email ?? '',
-                          style: const TextStyle(fontSize: 16),
-                        ),
+                _buildLanguageOption(
+                  'es',
+                  'Español',
+                  '🇪🇸',
+                  currentLocale == 'es',
+                  isDark,
+                  () => languageProvider.setLocale('es'),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.blue),
-                  onPressed: () => setState(() => _editingField = 'email'),
+                _buildLanguageOption(
+                  'ca',
+                  'Català',
+                  '🏴󠁥󠁳󠁣󠁴󠁿',
+                  currentLocale == 'ca',
+                  isDark,
+                  () => languageProvider.setLocale('ca'),
+                ),
+                _buildLanguageOption(
+                  'en',
+                  'English',
+                  '🇬🇧',
+                  currentLocale == 'en',
+                  isDark,
+                  () => languageProvider.setLocale('en'),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                const Icon(Icons.cake, color: Colors.blue, size: 28),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _editingField == 'birthDate'
-                      ? InkWell(
-                          onTap: _pickBirthDate,
-                          child: InputDecorator(
-                            decoration: const InputDecoration(
-                              labelText: 'Birth Date',
-                              border: OutlineInputBorder(),
-                            ),
-                            child: Text(_birthDate == null
-                                ? 'Select birth date'
-                                : '${_birthDate!.year}-${_birthDate!.month.toString().padLeft(2, '0')}-${_birthDate!.day.toString().padLeft(2, '0')}'),
-                          ),
-                        )
-                      : Text(
-                          _user?.birthDate != null
-                              ? '${_user!.birthDate.year}-${_user!.birthDate.month.toString().padLeft(2, '0')}-${_user!.birthDate.day.toString().padLeft(2, '0')}'
-                              : '',
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.blue),
-                  onPressed: () => setState(() => _editingField = 'birthDate'),
-                ),
-              ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguageOption(
+    String code,
+    String name,
+    String flag,
+    bool isSelected,
+    bool isDark,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (isDark ? Colors.blue[900] : Colors.blue[100])
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected
+                ? (isDark ? Colors.blue[700]! : Colors.blue[300]!)
+                : (isDark ? Colors.grey[800]! : Colors.grey[300]!),
+            width: 2,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              flag,
+              style: const TextStyle(fontSize: 24),
             ),
-            if (_editingField != null) ...[
-              const SizedBox(height: 16),
-              if (_error != null)
-                Text(_error!, style: const TextStyle(color: Colors.red)),
-              Row(
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: _saving ? null : _saveProfile,
-                    icon: _saving
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Icon(Icons.save),
-                    label: const Text('Save'),
-                  ),
-                  const SizedBox(width: 12),
-                  TextButton(
-                    onPressed: _saving ? null : () => setState(() => _editingField = null),
-                    child: const Text('Cancel'),
-                  ),
-                ],
+            const SizedBox(height: 8),
+            Text(
+              name,
+              style: TextStyle(
+                color: isDark ? Colors.white : Colors.black,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
-            ],
+            ),
           ],
         ),
       ),
@@ -256,40 +491,30 @@ class _SettingsViewState extends State<SettingsView> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.themeMode == ThemeMode.dark;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : Stack(
-              fit: StackFit.expand,
-              children: [
-                Image.asset(
-                  'assets/background_sky.png',
-                  fit: BoxFit.cover,
-                ),
-                Container(
-                  color: Colors.black.withOpacity(0.25), // overlay for readability
-                ),
-                ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    _userCard(),
-                    ListTile(
-                      leading: const Icon(Icons.brightness_6),
-                      title: const Text('Dark Mode'),
-                      trailing: Switch(
-                        value: isDark,
-                        onChanged: (value) {
-                          themeProvider.toggleTheme(value);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+    
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _userCard(),
+          _buildLanguageSection(isDark),
+          ListTile(
+            leading: const Icon(Icons.brightness_6),
+            title: const Text('Dark Mode'),
+            trailing: Switch(
+              value: isDark,
+              onChanged: (value) {
+                themeProvider.toggleTheme(value);
+              },
             ),
+          ),
+        ],
+      ),
     );
   }
 } 
