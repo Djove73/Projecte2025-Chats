@@ -9,6 +9,7 @@ import '../viewmodels/favorites_provider.dart';
 
 class HomeView extends StatefulWidget {
   final User user;
+  final int? initialNewsIndex;
 
   // Move newsSamples to the class level
   static final List<Map<String, String>> newsSamples = [
@@ -44,7 +45,7 @@ class HomeView extends StatefulWidget {
     },
   ];
 
-  const HomeView({super.key, required this.user});
+  const HomeView({super.key, required this.user, this.initialNewsIndex});
 
   @override
   State<HomeView> createState() => _HomeViewState();
@@ -52,6 +53,30 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
   int _selectedIndex = 0;
+  final ScrollController _scrollController = ScrollController();
+  int? _highlightedNewsIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialNewsIndex != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          _selectedIndex = 0;
+          _highlightedNewsIndex = widget.initialNewsIndex;
+        });
+        _scrollToNews(widget.initialNewsIndex!);
+      });
+    }
+  }
+
+  void _scrollToNews(int index) {
+    _scrollController.animateTo(
+      index * 170.0, // Aproximación de altura de cada card
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+  }
 
   void _onNavTap(int index) {
     setState(() {
@@ -120,10 +145,16 @@ class _HomeViewState extends State<HomeView> {
         child: _selectedIndex == 0
             ? ListView.builder(
                 key: const ValueKey('news'),
+                controller: _scrollController,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 itemCount: localizedNews.length,
                 itemBuilder: (context, index) {
-                  return _buildNewsCard(context, news: localizedNews[index], index: index);
+                  return _buildNewsCard(
+                    context,
+                    news: localizedNews[index],
+                    index: index,
+                    highlight: _highlightedNewsIndex == index,
+                  );
                 },
               )
             : SettingsView(user: widget.user),
@@ -158,7 +189,7 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  Widget _buildNewsCard(BuildContext context, {required Map<String, String> news, int? index}) {
+  Widget _buildNewsCard(BuildContext context, {required Map<String, String> news, int? index, bool highlight = false}) {
     final l10n = AppLocalizations.of(context);
     IconData icon;
     Color iconColor;
@@ -191,13 +222,16 @@ class _HomeViewState extends State<HomeView> {
     final newsIndex = index ?? 0;
     final isFavorite = favoritesProvider.isFavorite(newsIndex);
     return Card(
-      color: const Color(0xFF23242A),
+      color: highlight ? Colors.amber[100] : const Color(0xFF23242A),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      elevation: 6,
+      elevation: highlight ? 12 : 6,
       margin: const EdgeInsets.only(bottom: 18),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
         onTap: () {
+          setState(() {
+            _highlightedNewsIndex = null;
+          });
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('${l10n.processing}: ${news['headline']}')),
           );

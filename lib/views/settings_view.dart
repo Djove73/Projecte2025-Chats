@@ -6,6 +6,7 @@ import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../l10n/app_localizations.dart';
 import '../viewmodels/favorites_provider.dart';
+import 'home_view.dart';
 
 class SettingsView extends StatefulWidget {
   final User? user;
@@ -449,20 +450,56 @@ class _SettingsViewState extends State<SettingsView> {
             const SizedBox(height: 16),
             ...displayedFavorites.map((i) => Padding(
               padding: const EdgeInsets.only(bottom: 10),
-              child: Row(
-                children: [
-                  Icon(Icons.book, size: 18, color: Colors.amber[700]),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      AppLocalizations.of(context).getNewsHeadline(i + 1),
-                      style: TextStyle(
-                        color: isDark ? Colors.white : Colors.black,
-                        fontWeight: FontWeight.w500,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (context) => HomeView(
+                        user: widget.user!,
+                        initialNewsIndex: i,
                       ),
                     ),
+                  );
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.blueGrey[900] : Colors.blue[50],
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                ],
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.book, size: 18, color: Colors.amber[700]),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              AppLocalizations.of(context).getNewsHeadline(i + 1),
+                              style: TextStyle(
+                                color: isDark ? Colors.white : Colors.black,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 26),
+                        child: Text(
+                          AppLocalizations.of(context).getNewsSummary(i + 1),
+                          style: TextStyle(
+                            color: isDark ? Colors.grey[300] : Colors.grey[800],
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             )),
             if (favorites.length > 3 && !_showAllFavorites)
