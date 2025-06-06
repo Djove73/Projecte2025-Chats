@@ -4,6 +4,8 @@ class User {
   final String name;
   final DateTime birthDate;
   final bool acceptedTerms;
+  final List<String> blockedUsers;
+  final List<String> reportedUsers;
 
   User({
     required this.email,
@@ -11,6 +13,8 @@ class User {
     required this.name,
     required this.birthDate,
     required this.acceptedTerms,
+    this.blockedUsers = const [],
+    this.reportedUsers = const [],
   });
 
   Map<String, dynamic> toJson() {
@@ -20,6 +24,8 @@ class User {
       'name': name,
       'birthDate': birthDate.toIso8601String(),
       'acceptedTerms': acceptedTerms,
+      'blockedUsers': blockedUsers,
+      'reportedUsers': reportedUsers,
     };
   }
 
@@ -30,6 +36,8 @@ class User {
       name: json['name'],
       birthDate: DateTime.parse(json['birthDate']),
       acceptedTerms: json['acceptedTerms'],
+      blockedUsers: List<String>.from(json['blockedUsers'] ?? []),
+      reportedUsers: List<String>.from(json['reportedUsers'] ?? []),
     );
   }
 } 

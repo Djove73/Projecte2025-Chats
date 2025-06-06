@@ -4,8 +4,10 @@ import '../viewmodels/theme_provider.dart';
 import '../viewmodels/language_provider.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../services/database_service.dart';
 import '../l10n/app_localizations.dart';
 import '../viewmodels/favorites_provider.dart';
+import '../screens/blocked_users_screen.dart';
 import 'home_view.dart';
 import 'package:intl/intl.dart';
 
@@ -26,29 +28,40 @@ class _SettingsViewState extends State<SettingsView> {
   bool _saving = false;
   String? _error;
   final AuthService _authService = AuthService();
+  final DatabaseService _databaseService = DatabaseService();
   String? _editingField; // 'name', 'email', 'birthDate'
   bool _showAllFavorites = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchUser();
+    _initializeAndFetchUser();
   }
 
-  Future<void> _fetchUser() async {
+  Future<void> _initializeAndFetchUser() async {
     setState(() => _loading = true);
-    final email = widget.user?.email;
-    if (email != null) {
-      final user = widget.user;
-      setState(() {
-        _user = user;
-        _nameController = TextEditingController(text: user?.name ?? '');
-        _emailController = TextEditingController(text: user?.email ?? '');
-        _birthDate = user?.birthDate;
-        _loading = false;
-      });
-    } else {
+    try {
+      // Initialize database connection
+      await _databaseService.connect();
+      
+      final email = widget.user?.email;
+      if (email != null) {
+        final user = widget.user;
+        setState(() {
+          _user = user;
+          _nameController = TextEditingController(text: user?.name ?? '');
+          _emailController = TextEditingController(text: user?.email ?? '');
+          _birthDate = user?.birthDate;
+          _loading = false;
+        });
+      } else {
+        setState(() => _loading = false);
+      }
+    } catch (e) {
       setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error initializing: $e')),
+      );
     }
   }
 
@@ -130,6 +143,7 @@ class _SettingsViewState extends State<SettingsView> {
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
+    _databaseService.disconnect();
     super.dispose();
   }
 
@@ -656,6 +670,54 @@ class _SettingsViewState extends State<SettingsView> {
     );
   }
 
+  Widget _buildSettingsSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark
+        ? Colors.black.withOpacity(0.65)
+        : Colors.white.withOpacity(0.85);
+    final borderColor = isDark ? Colors.blue[900] : Colors.blue[200];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 24),
+        Text(
+          'Settings',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : Colors.black,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Card(
+          color: cardColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: borderColor!, width: 1),
+          ),
+          child: ListTile(
+            leading: const Icon(Icons.block, color: Colors.red),
+            title: const Text('Blocked Users'),
+            subtitle: const Text('Manage your blocked users'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BlockedUsersScreen(
+                    currentUserEmail: _user?.email ?? '',
+                    databaseService: _databaseService,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        // ... rest of the settings section ...
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -699,6 +761,7 @@ class _SettingsViewState extends State<SettingsView> {
                 }
               },
             ),
+            _buildSettingsSection(),
           ],
         ),
       ),

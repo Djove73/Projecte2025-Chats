@@ -179,4 +179,65 @@ class DatabaseService {
       rethrow;
     }
   }
+
+  Future<bool> blockUser(String currentUserEmail, String userToBlockEmail) async {
+    try {
+      final result = await _users.update(
+        where.eq('email', currentUserEmail),
+        modify.addToSet('blockedUsers', userToBlockEmail),
+      );
+      return (result['nModified'] ?? result['n'] ?? 0) > 0;
+    } catch (e) {
+      print('Error blocking user: $e');
+      rethrow;
+    }
+  }
+
+  Future<bool> unblockUser(String currentUserEmail, String userToUnblockEmail) async {
+    try {
+      final result = await _users.update(
+        where.eq('email', currentUserEmail),
+        modify.pull('blockedUsers', userToUnblockEmail),
+      );
+      return (result['nModified'] ?? result['n'] ?? 0) > 0;
+    } catch (e) {
+      print('Error unblocking user: $e');
+      rethrow;
+    }
+  }
+
+  Future<bool> reportUser(String currentUserEmail, String userToReportEmail) async {
+    try {
+      final result = await _users.update(
+        where.eq('email', currentUserEmail),
+        modify.addToSet('reportedUsers', userToReportEmail),
+      );
+      return (result['nModified'] ?? result['n'] ?? 0) > 0;
+    } catch (e) {
+      print('Error reporting user: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<String>> getBlockedUsers(String userEmail) async {
+    try {
+      final user = await _users.findOne(where.eq('email', userEmail));
+      if (user == null) return [];
+      return List<String>.from(user['blockedUsers'] ?? []);
+    } catch (e) {
+      print('Error getting blocked users: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<String>> getReportedUsers(String userEmail) async {
+    try {
+      final user = await _users.findOne(where.eq('email', userEmail));
+      if (user == null) return [];
+      return List<String>.from(user['reportedUsers'] ?? []);
+    } catch (e) {
+      print('Error getting reported users: $e');
+      rethrow;
+    }
+  }
 } 
