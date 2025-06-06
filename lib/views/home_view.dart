@@ -4,6 +4,7 @@ import '../models/user_model.dart';
 import '../viewmodels/login_viewmodel.dart';
 import '../views/login_view.dart';
 import 'settings_view.dart';
+import '../l10n/app_localizations.dart';
 
 class HomeView extends StatefulWidget {
   final User user;
@@ -69,9 +70,10 @@ class _HomeViewState extends State<HomeView> {
       }
     } catch (e) {
       if (context.mounted) {
+        final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al cerrar sesión: \\${e.toString()}'),
+            content: Text('${l10n.error}: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -81,6 +83,13 @@ class _HomeViewState extends State<HomeView> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final List<Map<String, String>> localizedNews = List.generate(5, (i) => {
+      'headline': l10n.getNewsHeadline(i + 1),
+      'summary': l10n.getNewsSummary(i + 1),
+      'time': HomeView.newsSamples[i]['time']!,
+      'type': HomeView.newsSamples[i]['type']!,
+    });
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -91,7 +100,7 @@ class _HomeViewState extends State<HomeView> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => _handleLogout(context),
-            tooltip: 'Logout',
+            tooltip: l10n.logout,
           ),
           Padding(
             padding: const EdgeInsets.only(right: 12),
@@ -111,9 +120,9 @@ class _HomeViewState extends State<HomeView> {
             ? ListView.builder(
                 key: const ValueKey('news'),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                itemCount: HomeView.newsSamples.length,
+                itemCount: localizedNews.length,
                 itemBuilder: (context, index) {
-                  return _buildNewsCard(context, news: HomeView.newsSamples[index]);
+                  return _buildNewsCard(context, news: localizedNews[index]);
                 },
               )
             : SettingsView(user: widget.user),
@@ -123,26 +132,25 @@ class _HomeViewState extends State<HomeView> {
               backgroundColor: Colors.blue,
               foregroundColor: Colors.white,
               onPressed: () {
-                // TODO: Implement new post or refresh
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Feature coming soon!')),
+                  SnackBar(content: Text(l10n.processing)),
                 );
               },
               child: const Icon(Icons.add),
-              tooltip: 'New Post',
+              tooltip: l10n.save,
             )
           : null,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onNavTap,
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
+            icon: const Icon(Icons.home),
+            label: l10n.welcome,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
+            icon: const Icon(Icons.settings),
+            label: l10n.settings,
           ),
         ],
       ),
@@ -150,6 +158,7 @@ class _HomeViewState extends State<HomeView> {
   }
 
   Widget _buildNewsCard(BuildContext context, {required Map<String, String> news}) {
+    final l10n = AppLocalizations.of(context);
     IconData icon;
     Color iconColor;
     switch (news['type']) {
@@ -185,9 +194,8 @@ class _HomeViewState extends State<HomeView> {
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
         onTap: () {
-          // TODO: Open news detail
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Opening: \\${news['headline']}')),
+            SnackBar(content: Text('${l10n.processing}: ${news['headline']}')),
           );
         },
         child: Padding(
@@ -237,7 +245,7 @@ class _HomeViewState extends State<HomeView> {
                 child: ElevatedButton.icon(
                   onPressed: () {},
                   icon: const Icon(Icons.open_in_new, size: 18, color: Colors.white),
-                  label: const Text('Read more'),
+                  label: Text(l10n.save),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                     foregroundColor: Colors.white,

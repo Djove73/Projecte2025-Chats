@@ -427,12 +427,7 @@ class _SettingsViewState extends State<SettingsView> {
                   '🇪🇸',
                   currentLocale == 'es',
                   isDark,
-                  () {
-                    languageProvider.setLocale('es');
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${l10n.language} ${l10n.save}')),
-                    );
-                  },
+                  () => languageProvider.setLocale('es'),
                 ),
                 _buildLanguageOption(
                   'ca',
@@ -440,12 +435,7 @@ class _SettingsViewState extends State<SettingsView> {
                   '🏴󠁥󠁳󠁣󠁴󠁿',
                   currentLocale == 'ca',
                   isDark,
-                  () {
-                    languageProvider.setLocale('ca');
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${l10n.language} ${l10n.save}')),
-                    );
-                  },
+                  () => languageProvider.setLocale('ca'),
                 ),
                 _buildLanguageOption(
                   'en',
@@ -453,12 +443,7 @@ class _SettingsViewState extends State<SettingsView> {
                   '🇬🇧',
                   currentLocale == 'en',
                   isDark,
-                  () {
-                    languageProvider.setLocale('en');
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${l10n.language} ${l10n.save}')),
-                    );
-                  },
+                  () => languageProvider.setLocale('en'),
                 ),
               ],
             ),
