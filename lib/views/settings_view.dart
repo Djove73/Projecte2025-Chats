@@ -7,6 +7,7 @@ import '../services/auth_service.dart';
 import '../l10n/app_localizations.dart';
 import '../viewmodels/favorites_provider.dart';
 import 'home_view.dart';
+import 'package:intl/intl.dart';
 
 class SettingsView extends StatefulWidget {
   final User? user;
@@ -392,7 +393,7 @@ class _SettingsViewState extends State<SettingsView> {
   Widget _buildFavoritesSection(bool isDark) {
     final favoritesProvider = Provider.of<FavoritesProvider>(context);
     final l10n = AppLocalizations.of(context);
-    final List<int> favorites = favoritesProvider.favoriteNewsIndexes;
+    final favorites = favoritesProvider.favorites;
     if (favorites.isEmpty) {
       return Container(
         margin: const EdgeInsets.only(bottom: 24),
@@ -421,6 +422,7 @@ class _SettingsViewState extends State<SettingsView> {
     }
     final showAll = _showAllFavorites || favorites.length <= 3;
     final displayedFavorites = showAll ? favorites : favorites.take(3).toList();
+    final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
       decoration: BoxDecoration(
@@ -429,35 +431,35 @@ class _SettingsViewState extends State<SettingsView> {
         border: Border.all(color: isDark ? Colors.blue[900]! : Colors.blue[200]!, width: 2),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(22),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(Icons.bookmark, color: Colors.amber[700], size: 28),
-                const SizedBox(width: 12),
+                Icon(Icons.bookmark, color: Colors.amber[700], size: 24),
+                const SizedBox(width: 10),
                 Text(
                   'Favoritos / Guardados',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: isDark ? Colors.white : Colors.black,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            ...displayedFavorites.map((i) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
+            const SizedBox(height: 10),
+            ...displayedFavorites.map((fav) => Padding(
+              padding: const EdgeInsets.only(bottom: 6),
               child: InkWell(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(8),
                 onTap: () {
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(
                       builder: (context) => HomeView(
                         user: widget.user!,
-                        initialNewsIndex: i,
+                        initialNewsIndex: fav.index,
                       ),
                     ),
                   );
@@ -465,36 +467,45 @@ class _SettingsViewState extends State<SettingsView> {
                 child: Container(
                   decoration: BoxDecoration(
                     color: isDark ? Colors.blueGrey[900] : Colors.blue[50],
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                  child: Row(
                     children: [
-                      Row(
-                        children: [
-                          Icon(Icons.book, size: 18, color: Colors.amber[700]),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              AppLocalizations.of(context).getNewsHeadline(i + 1),
+                      Icon(Icons.book, size: 16, color: Colors.amber[700]),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppLocalizations.of(context).getNewsHeadline(fav.index + 1),
                               style: TextStyle(
                                 color: isDark ? Colors.white : Colors.black,
                                 fontWeight: FontWeight.w600,
+                                fontSize: 13,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ],
+                            Text(
+                              AppLocalizations.of(context).getNewsSummary(fav.index + 1),
+                              style: TextStyle(
+                                color: isDark ? Colors.grey[300] : Colors.grey[800],
+                                fontSize: 11,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 4),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 26),
-                        child: Text(
-                          AppLocalizations.of(context).getNewsSummary(i + 1),
-                          style: TextStyle(
-                            color: isDark ? Colors.grey[300] : Colors.grey[800],
-                            fontSize: 13,
-                          ),
+                      const SizedBox(width: 8),
+                      Text(
+                        dateFormat.format(fav.savedAt),
+                        style: TextStyle(
+                          color: isDark ? Colors.grey[400] : Colors.grey[700],
+                          fontSize: 10,
                         ),
                       ),
                     ],

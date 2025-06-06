@@ -1,18 +1,25 @@
 import 'package:flutter/material.dart';
 
-class FavoritesProvider extends ChangeNotifier {
-  final List<int> _favoriteNewsIndexes = [];
+class FavoriteItem {
+  final int index;
+  final DateTime savedAt;
+  FavoriteItem(this.index, this.savedAt);
+}
 
-  List<int> get favoriteNewsIndexes => List.unmodifiable(_favoriteNewsIndexes);
+class FavoritesProvider extends ChangeNotifier {
+  final List<FavoriteItem> _favorites = [];
+
+  List<FavoriteItem> get favorites => List.unmodifiable(_favorites);
 
   void toggleFavorite(int index) {
-    if (_favoriteNewsIndexes.contains(index)) {
-      _favoriteNewsIndexes.remove(index);
+    final existing = _favorites.indexWhere((item) => item.index == index);
+    if (existing != -1) {
+      _favorites.removeAt(existing);
     } else {
-      _favoriteNewsIndexes.add(index);
+      _favorites.add(FavoriteItem(index, DateTime.now()));
     }
     notifyListeners();
   }
 
-  bool isFavorite(int index) => _favoriteNewsIndexes.contains(index);
+  bool isFavorite(int index) => _favorites.any((item) => item.index == index);
 } 
