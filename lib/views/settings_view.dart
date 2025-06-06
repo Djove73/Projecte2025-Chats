@@ -4,6 +4,7 @@ import '../viewmodels/theme_provider.dart';
 import '../viewmodels/language_provider.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../l10n/app_localizations.dart';
 
 class SettingsView extends StatefulWidget {
   final User? user;
@@ -214,6 +215,7 @@ class _SettingsViewState extends State<SettingsView> {
     bool isDark = false,
     TextInputType? keyboardType,
   }) {
+    final l10n = AppLocalizations.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -250,44 +252,53 @@ class _SettingsViewState extends State<SettingsView> {
                               ? const SizedBox(
                                   width: 18,
                                   height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  child: CircularProgressIndicator(strokeWidth: 2),
                                 )
                               : const Icon(Icons.save),
-                          label: const Text('Save'),
+                          label: Text(l10n.save),
                         ),
-                        const SizedBox(width: 10),
-                        TextButton(
-                          onPressed: saving ? null : onCancel,
-                          child: const Text('Cancel'),
+                        const SizedBox(width: 8),
+                        TextButton.icon(
+                          onPressed: onCancel,
+                          icon: const Icon(Icons.cancel),
+                          label: Text(l10n.cancel),
                         ),
                       ],
                     ),
                   ],
                 )
-              : Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: isDark ? Colors.white : Colors.black,
-                    fontWeight: FontWeight.w500,
-                  ),
+              : Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            label,
+                            style: TextStyle(
+                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            value,
+                            style: TextStyle(
+                              color: isDark ? Colors.white : Colors.black,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: onEdit,
+                      tooltip: l10n.edit,
+                    ),
+                  ],
                 ),
-        ),
-        MouseRegion(
-          onEnter: (_) => setState(() => _hoveringEdit = true),
-          onExit: (_) => setState(() => _hoveringEdit = false),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            decoration: BoxDecoration(
-              color: _hoveringEdit ? Colors.blue.withOpacity(0.12) : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.edit, color: Colors.blue),
-              onPressed: onEdit,
-              tooltip: 'Edit $label',
-            ),
-          ),
         ),
       ],
     );
@@ -378,6 +389,7 @@ class _SettingsViewState extends State<SettingsView> {
   Widget _buildLanguageSection(bool isDark) {
     final languageProvider = Provider.of<LanguageProvider>(context);
     final currentLocale = languageProvider.currentLocale.languageCode;
+    final l10n = AppLocalizations.of(context);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
@@ -396,7 +408,7 @@ class _SettingsViewState extends State<SettingsView> {
                 Icon(Icons.language, color: Colors.blue, size: 28),
                 const SizedBox(width: 12),
                 Text(
-                  'Language',
+                  l10n.language,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -415,7 +427,12 @@ class _SettingsViewState extends State<SettingsView> {
                   '🇪🇸',
                   currentLocale == 'es',
                   isDark,
-                  () => languageProvider.setLocale('es'),
+                  () {
+                    languageProvider.setLocale('es');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('${l10n.language} ${l10n.save}')),
+                    );
+                  },
                 ),
                 _buildLanguageOption(
                   'ca',
@@ -423,7 +440,12 @@ class _SettingsViewState extends State<SettingsView> {
                   '🏴󠁥󠁳󠁣󠁴󠁿',
                   currentLocale == 'ca',
                   isDark,
-                  () => languageProvider.setLocale('ca'),
+                  () {
+                    languageProvider.setLocale('ca');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('${l10n.language} ${l10n.save}')),
+                    );
+                  },
                 ),
                 _buildLanguageOption(
                   'en',
@@ -431,7 +453,12 @@ class _SettingsViewState extends State<SettingsView> {
                   '🇬🇧',
                   currentLocale == 'en',
                   isDark,
-                  () => languageProvider.setLocale('en'),
+                  () {
+                    languageProvider.setLocale('en');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('${l10n.language} ${l10n.save}')),
+                    );
+                  },
                 ),
               ],
             ),
@@ -489,31 +516,48 @@ class _SettingsViewState extends State<SettingsView> {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final isDark = themeProvider.themeMode == ThemeMode.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context);
     
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _userCard(),
-          _buildLanguageSection(isDark),
-          ListTile(
-            leading: const Icon(Icons.brightness_6),
-            title: const Text('Dark Mode'),
-            trailing: Switch(
-              value: isDark,
-              onChanged: (value) {
-                themeProvider.toggleTheme(value);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.settings),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _userCard(),
+            _buildLanguageSection(isDark),
+            ListTile(
+              leading: const Icon(Icons.brightness_6),
+              title: Text(l10n.theme),
+              trailing: Switch(
+                value: isDark,
+                onChanged: (value) {
+                  final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+                  themeProvider.toggleTheme(value);
+                },
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: Text(l10n.logout),
+              onTap: () async {
+                final authService = AuthService();
+                await authService.logout();
+                if (mounted) {
+                  Navigator.of(context).pushReplacementNamed('/login');
+                }
               },
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

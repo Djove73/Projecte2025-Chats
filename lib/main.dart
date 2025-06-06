@@ -6,6 +6,7 @@ import 'viewmodels/register_viewmodel.dart';
 import 'viewmodels/theme_provider.dart';
 import 'viewmodels/language_provider.dart';
 import 'views/login_view.dart';
+import 'l10n/app_localizations.dart';
 
 void main() {
   runApp(const MyApp());
@@ -35,6 +36,7 @@ class MyApp extends StatelessWidget {
               Locale('ca'), // Catalan
             ],
             localizationsDelegates: const [
+              AppLocalizationsDelegate(),
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
