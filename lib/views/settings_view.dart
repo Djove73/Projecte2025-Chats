@@ -25,6 +25,7 @@ class _SettingsViewState extends State<SettingsView> {
   String? _error;
   final AuthService _authService = AuthService();
   String? _editingField; // 'name', 'email', 'birthDate'
+  bool _showAllFavorites = false;
 
   @override
   void initState() {
@@ -392,8 +393,33 @@ class _SettingsViewState extends State<SettingsView> {
     final l10n = AppLocalizations.of(context);
     final List<int> favorites = favoritesProvider.favoriteNewsIndexes;
     if (favorites.isEmpty) {
-      return Container();
+      return Container(
+        margin: const EdgeInsets.only(bottom: 24),
+        decoration: BoxDecoration(
+          color: isDark ? Colors.black.withOpacity(0.65) : Colors.white.withOpacity(0.85),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: isDark ? Colors.blue[900]! : Colors.blue[200]!, width: 2),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Row(
+            children: [
+              Icon(Icons.bookmark, color: Colors.amber[700], size: 28),
+              const SizedBox(width: 12),
+              Text(
+                'No hay favoritos guardados',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: isDark ? Colors.white : Colors.black,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
     }
+    final showAll = _showAllFavorites || favorites.length <= 3;
+    final displayedFavorites = showAll ? favorites : favorites.take(3).toList();
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
       decoration: BoxDecoration(
@@ -421,7 +447,7 @@ class _SettingsViewState extends State<SettingsView> {
               ],
             ),
             const SizedBox(height: 16),
-            ...favorites.map((i) => Padding(
+            ...displayedFavorites.map((i) => Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Row(
                 children: [
@@ -439,6 +465,30 @@ class _SettingsViewState extends State<SettingsView> {
                 ],
               ),
             )),
+            if (favorites.length > 3 && !_showAllFavorites)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _showAllFavorites = true;
+                    });
+                  },
+                  child: const Text('Ver más'),
+                ),
+              ),
+            if (favorites.length > 3 && _showAllFavorites)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _showAllFavorites = false;
+                    });
+                  },
+                  child: const Text('Ver menos'),
+                ),
+              ),
           ],
         ),
       ),
