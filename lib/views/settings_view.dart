@@ -10,6 +10,8 @@ import '../viewmodels/favorites_provider.dart';
 import '../screens/blocked_users_screen.dart';
 import 'home_view.dart';
 import 'package:intl/intl.dart';
+import '../viewmodels/login_viewmodel.dart';
+import 'login_view.dart';
 
 class SettingsView extends StatefulWidget {
   final User? user;
@@ -262,7 +264,9 @@ class _SettingsViewState extends State<SettingsView> {
                         padding: const EdgeInsets.only(top: 6),
                         child: Text(error, style: const TextStyle(color: Colors.red)),
                       ),
+                    const SizedBox(height: 8),
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         ElevatedButton.icon(
                           onPressed: saving ? null : onSave,
@@ -273,13 +277,12 @@ class _SettingsViewState extends State<SettingsView> {
                                   child: CircularProgressIndicator(strokeWidth: 2),
                                 )
                               : const Icon(Icons.save),
-                          label: Text(l10n.save),
+                          label: const Text('Save'),
                         ),
-                        const SizedBox(width: 8),
-                        TextButton.icon(
-                          onPressed: onCancel,
-                          icon: const Icon(Icons.cancel),
-                          label: Text(l10n.cancel),
+                        const SizedBox(width: 10),
+                        TextButton(
+                          onPressed: _saving ? null : onCancel,
+                          child: const Text('Cancel'),
                         ),
                       ],
                     ),
@@ -335,23 +338,30 @@ class _SettingsViewState extends State<SettingsView> {
                   children: [
                     InkWell(
                       onTap: _pickBirthDate,
-                      borderRadius: BorderRadius.circular(8),
                       child: InputDecorator(
                         decoration: const InputDecoration(
                           labelText: 'Birth Date',
                           border: OutlineInputBorder(),
                         ),
-                        child: Text(_birthDate == null
-                            ? 'Select birth date'
-                            : '${_birthDate!.year}-${_birthDate!.month.toString().padLeft(2, '0')}-${_birthDate!.day.toString().padLeft(2, '0')}'),
+                        child: Text(
+                          _birthDate != null
+                              ? '${_birthDate!.year}-${_birthDate!.month.toString().padLeft(2, '0')}-${_birthDate!.day.toString().padLeft(2, '0')}'
+                              : 'Select date',
+                          style: TextStyle(
+                            color: isDark ? Colors.white : Colors.black,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ),
                     ),
-                    if (_error != null)
+                    if (_error != null && _editingField == 'birthDate')
                       Padding(
                         padding: const EdgeInsets.only(top: 6),
                         child: Text(_error!, style: const TextStyle(color: Colors.red)),
                       ),
+                    const SizedBox(height: 8),
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         ElevatedButton.icon(
                           onPressed: _saving ? null : _saveProfile,
@@ -359,7 +369,7 @@ class _SettingsViewState extends State<SettingsView> {
                               ? const SizedBox(
                                   width: 18,
                                   height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  child: CircularProgressIndicator(strokeWidth: 2),
                                 )
                               : const Icon(Icons.save),
                           label: const Text('Save'),
@@ -373,32 +383,51 @@ class _SettingsViewState extends State<SettingsView> {
                     ),
                   ],
                 )
-              : Text(
-                  _user?.birthDate != null
-                      ? '${_user!.birthDate.year}-${_user!.birthDate.month.toString().padLeft(2, '0')}-${_user!.birthDate.day.toString().padLeft(2, '0')}'
-                      : '',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: isDark ? Colors.white : Colors.black,
-                    fontWeight: FontWeight.w500,
-                  ),
+              : Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Birth Date',
+                            style: TextStyle(
+                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _user?.birthDate != null
+                                ? '${_user!.birthDate.year}-${_user!.birthDate.month.toString().padLeft(2, '0')}-${_user!.birthDate.day.toString().padLeft(2, '0')}'
+                                : '',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: isDark ? Colors.white : Colors.black,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    MouseRegion(
+                      onEnter: (_) => setState(() => _hoveringEdit = true),
+                      onExit: (_) => setState(() => _hoveringEdit = false),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        decoration: BoxDecoration(
+                          color: _hoveringEdit ? Colors.blue.withOpacity(0.12) : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () => setState(() => _editingField = 'birthDate'),
+                          tooltip: 'Edit Birth Date',
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-        ),
-        MouseRegion(
-          onEnter: (_) => setState(() => _hoveringEdit = true),
-          onExit: (_) => setState(() => _hoveringEdit = false),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            decoration: BoxDecoration(
-              color: _hoveringEdit ? Colors.blue.withOpacity(0.12) : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.edit, color: Colors.blue),
-              onPressed: () => setState(() => _editingField = 'birthDate'),
-              tooltip: 'Edit Birth Date',
-            ),
-          ),
         ),
       ],
     );
@@ -754,10 +783,24 @@ class _SettingsViewState extends State<SettingsView> {
               leading: const Icon(Icons.logout),
               title: Text(l10n.logout),
               onTap: () async {
-                final authService = AuthService();
-                await authService.logout();
-                if (mounted) {
-                  Navigator.of(context).pushReplacementNamed('/login');
+                try {
+                  final viewModel = context.read<LoginViewModel>();
+                  await viewModel.logout();
+                  if (mounted) {
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (context) => const LoginView()),
+                      (route) => false,
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('${l10n.error}: ${e.toString()}'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 }
               },
             ),
