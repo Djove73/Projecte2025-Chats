@@ -5,6 +5,7 @@ import '../viewmodels/login_viewmodel.dart';
 import '../views/login_view.dart';
 import 'settings_view.dart';
 import '../l10n/app_localizations.dart';
+import '../viewmodels/favorites_provider.dart';
 
 class HomeView extends StatefulWidget {
   final User user;
@@ -122,7 +123,7 @@ class _HomeViewState extends State<HomeView> {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 itemCount: localizedNews.length,
                 itemBuilder: (context, index) {
-                  return _buildNewsCard(context, news: localizedNews[index]);
+                  return _buildNewsCard(context, news: localizedNews[index], index: index);
                 },
               )
             : SettingsView(user: widget.user),
@@ -157,7 +158,7 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  Widget _buildNewsCard(BuildContext context, {required Map<String, String> news}) {
+  Widget _buildNewsCard(BuildContext context, {required Map<String, String> news, int? index}) {
     final l10n = AppLocalizations.of(context);
     IconData icon;
     Color iconColor;
@@ -186,6 +187,9 @@ class _HomeViewState extends State<HomeView> {
         icon = Icons.flash_on;
         iconColor = Colors.redAccent;
     }
+    final favoritesProvider = Provider.of<FavoritesProvider>(context);
+    final newsIndex = index ?? 0;
+    final isFavorite = favoritesProvider.isFavorite(newsIndex);
     return Card(
       color: const Color(0xFF23242A),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
@@ -224,6 +228,17 @@ class _HomeViewState extends State<HomeView> {
                         fontSize: 17,
                       ),
                     ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      isFavorite ? Icons.bookmark : Icons.bookmark_border,
+                      color: isFavorite ? Colors.amber : Colors.grey[400],
+                      size: 22,
+                    ),
+                    tooltip: isFavorite ? 'Remove from favorites' : 'Add to favorites',
+                    onPressed: () {
+                      favoritesProvider.toggleFavorite(newsIndex);
+                    },
                   ),
                   Text(
                     news['time']!,

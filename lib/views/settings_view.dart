@@ -5,6 +5,7 @@ import '../viewmodels/language_provider.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../l10n/app_localizations.dart';
+import '../viewmodels/favorites_provider.dart';
 
 class SettingsView extends StatefulWidget {
   final User? user;
@@ -386,6 +387,64 @@ class _SettingsViewState extends State<SettingsView> {
     );
   }
 
+  Widget _buildFavoritesSection(bool isDark) {
+    final favoritesProvider = Provider.of<FavoritesProvider>(context);
+    final l10n = AppLocalizations.of(context);
+    final List<int> favorites = favoritesProvider.favoriteNewsIndexes;
+    if (favorites.isEmpty) {
+      return Container();
+    }
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.black.withOpacity(0.65) : Colors.white.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: isDark ? Colors.blue[900]! : Colors.blue[200]!, width: 2),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(22),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.bookmark, color: Colors.amber[700], size: 28),
+                const SizedBox(width: 12),
+                Text(
+                  'Favoritos / Guardados',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ...favorites.map((i) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                children: [
+                  Icon(Icons.book, size: 18, color: Colors.amber[700]),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      AppLocalizations.of(context).getNewsHeadline(i + 1),
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildLanguageSection(bool isDark) {
     final languageProvider = Provider.of<LanguageProvider>(context);
     final currentLocale = languageProvider.currentLocale.languageCode;
@@ -518,6 +577,7 @@ class _SettingsViewState extends State<SettingsView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _userCard(),
+            _buildFavoritesSection(isDark),
             _buildLanguageSection(isDark),
             ListTile(
               leading: const Icon(Icons.brightness_6),
