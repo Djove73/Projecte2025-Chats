@@ -6,6 +6,7 @@ import '../views/login_view.dart';
 import 'settings_view.dart';
 import '../l10n/app_localizations.dart';
 import '../viewmodels/favorites_provider.dart';
+import '../services/auth_service.dart';
 
 class HomeView extends StatefulWidget {
   final User user;
@@ -55,6 +56,11 @@ class _HomeViewState extends State<HomeView> {
   int _selectedIndex = 0;
   final ScrollController _scrollController = ScrollController();
   int? _highlightedNewsIndex;
+  final TextEditingController _searchController = TextEditingController();
+  List<User> _allUsers = [];
+  List<User> _filteredUsers = [];
+  bool _isLoading = true;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -68,6 +74,14 @@ class _HomeViewState extends State<HomeView> {
         _scrollToNews(widget.initialNewsIndex!);
       });
     }
+    _fetchUsers();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   void _scrollToNews(int index) {
@@ -107,6 +121,46 @@ class _HomeViewState extends State<HomeView> {
     }
   }
 
+  void _onSearchChanged() async {
+    setState(() {
+      _searchQuery = _searchController.text.trim().toLowerCase();
+      _isLoading = true;
+    });
+    if (_searchQuery.isEmpty) {
+      setState(() {
+        _filteredUsers = [];
+        _isLoading = false;
+      });
+      return;
+    }
+    try {
+      final users = await AuthService().searchUsers(_searchQuery);
+      setState(() {
+        _filteredUsers = users;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _filteredUsers = [];
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _fetchUsers() async {
+    setState(() => _isLoading = true);
+    try {
+      final users = await AuthService().getAllUsers();
+      setState(() {
+        _allUsers = users;
+        _filteredUsers = users;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -139,26 +193,77 @@ class _HomeViewState extends State<HomeView> {
             ),
           ),
         ],
-      ),
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 400),
-        child: _selectedIndex == 0
-            ? ListView.builder(
-                key: const ValueKey('news'),
-                controller: _scrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                itemCount: localizedNews.length,
-                itemBuilder: (context, index) {
-                  return _buildNewsCard(
-                    context,
-                    news: localizedNews[index],
-                    index: index,
-                    highlight: _highlightedNewsIndex == index,
-                  );
-                },
+        bottom: _selectedIndex == 0
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(70),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Material(
+                    elevation: 4,
+                    borderRadius: BorderRadius.circular(30),
+                    child: TextField(
+                      controller: _searchController,
+                      style: const TextStyle(fontSize: 18, color: Colors.black),
+                      decoration: InputDecoration(
+                        hintText: 'Search users...',
+                        hintStyle: const TextStyle(color: Colors.black54),
+                        prefixIcon: const Icon(Icons.search, color: Colors.blue),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, color: Colors.grey),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  FocusScope.of(context).unfocus();
+                                },
+                              )
+                            : null,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
               )
-            : SettingsView(user: widget.user),
+            : null,
       ),
+      body: _selectedIndex == 0
+          ? (_isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _searchController.text.isEmpty
+                  ? const Center(child: Text('Type to search for users...', style: TextStyle(fontSize: 16, color: Colors.grey)))
+                  : _filteredUsers.isEmpty
+                      ? const Center(child: Text('No users found', style: TextStyle(fontSize: 18, color: Colors.grey)))
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: _filteredUsers.length,
+                          itemBuilder: (context, index) {
+                            final user = _filteredUsers[index];
+                            return Card(
+                              elevation: 3,
+                              margin: const EdgeInsets.symmetric(vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: Colors.blue.shade100,
+                                  child: Text(
+                                    user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+                                  ),
+                                ),
+                                title: Text(user.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                subtitle: Text(user.email),
+                              ),
+                            );
+                          },
+                        ))
+          : SettingsView(user: widget.user),
       floatingActionButton: _selectedIndex == 0
           ? FloatingActionButton(
               backgroundColor: Colors.blue,
