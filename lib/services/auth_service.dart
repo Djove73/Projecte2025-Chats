@@ -84,4 +84,18 @@ class AuthService {
       throw 'Error al borrar la cuenta';
     }
   }
+
+  Future<List<User>> getAllUsers() async {
+    try {
+      final response = await _dio.get('/auth/all-users');
+      if (response.statusCode == 200 && response.data is List) {
+        return (response.data as List)
+            .map((json) => User.fromJson(json))
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      throw 'Error fetching users';
+    }
+  }
 } 

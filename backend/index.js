@@ -117,20 +117,40 @@ app.post('/auth/reset-password', async (req, res) => {
 // Endpoint para eliminar cuenta
 app.post('/auth/delete-account', async (req, res) => {
   const { email } = req.body;
+  console.log('Delete account request for:', email);
   if (!email) {
     return res.status(400).json({ message: 'Email requerido' });
   }
   try {
     await connectMongo();
+    const user = await usersCollection.findOne({ email });
+    if (!user) {
+      console.log('User not found:', email);
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
     const result = await usersCollection.deleteOne({ email });
     if (result.deletedCount === 1) {
+      console.log('User deleted:', email);
       return res.json({ message: 'Cuenta eliminada correctamente' });
     } else {
+      console.log('Delete failed for:', email);
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
   } catch (error) {
     console.error('Error eliminando cuenta:', error);
     return res.status(500).json({ message: 'Error eliminando cuenta' });
+  }
+});
+
+// Endpoint para obtener todos los usuarios
+app.get('/auth/all-users', async (req, res) => {
+  try {
+    await connectMongo();
+    const users = await usersCollection.find({}, { projection: { password: 0 } }).toArray();
+    res.json(users);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ message: 'Error fetching users' });
   }
 });
 
