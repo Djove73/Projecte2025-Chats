@@ -7,9 +7,12 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
+    "body-parser": "^1.20.2",
     "cors": "^2.8.5",
-    "nodemailer": "^6.9.13",
-    "body-parser": "^1.20.2"
+    "crypto-js": "^4.2.0",
+    "dotenv": "^16.5.0",
+    "express": "^4.18.2",
+    "mongodb": "^6.17.0",
+    "nodemailer": "^6.9.13"
   }
-} 
+}
