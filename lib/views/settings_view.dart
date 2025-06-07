@@ -70,27 +70,40 @@ class _SettingsViewState extends State<SettingsView> {
   bool _validateFields() {
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
-    if (_editingField == 'name' && name.isEmpty) {
-      setState(() => _error = 'Name cannot be empty');
-      return false;
-    }
-    final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-    if (_editingField == 'email' && !emailRegex.hasMatch(email)) {
-      setState(() => _error = 'Invalid email format');
-      return false;
-    }
-    if (_editingField == 'birthDate' && _birthDate == null) {
-      setState(() => _error = 'Birth date is required');
-      return false;
-    }
-    if (_editingField == 'birthDate') {
-      final minDate = DateTime.now().subtract(const Duration(days: 365 * 13));
-      if (_birthDate!.isAfter(minDate)) {
-        setState(() => _error = 'You must be at least 13 years old');
-        return false;
-      }
-    }
+    
+    // Clear previous error
     setState(() => _error = null);
+    
+    // Validate based on the field being edited
+    switch (_editingField) {
+      case 'name':
+        if (name.isEmpty) {
+          setState(() => _error = 'El nombre no puede estar vacío');
+          return false;
+        }
+        break;
+      case 'email':
+        if (email.isEmpty) {
+          setState(() => _error = 'El email no puede estar vacío');
+          return false;
+        }
+        if (!email.contains('@') || !email.contains('.')) {
+          setState(() => _error = 'Formato de email inválido');
+          return false;
+        }
+        break;
+      case 'birthDate':
+        if (_birthDate == null) {
+          setState(() => _error = 'La fecha de nacimiento es requerida');
+          return false;
+        }
+        final minDate = DateTime.now().subtract(const Duration(days: 365 * 13));
+        if (_birthDate!.isAfter(minDate)) {
+          setState(() => _error = 'Debes tener al menos 13 años');
+          return false;
+        }
+        break;
+    }
     return true;
   }
 
@@ -110,34 +123,77 @@ class _SettingsViewState extends State<SettingsView> {
 
   Future<void> _saveProfile() async {
     if (_user == null) return;
-    if (!_validateFields()) return;
-    setState(() => _saving = true);
-    final name = _nameController.text.trim();
-    final email = _emailController.text.trim();
-    final success = await _authService.updateUser(
-      _user!.email,
-      name: _editingField == 'name' ? name : null,
-      newEmail: _editingField == 'email' ? email : null,
-      birthDate: _editingField == 'birthDate' ? _birthDate : null,
-    );
-    setState(() => _saving = false);
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated!')),
+    
+    try {
+      if (!_validateFields()) return;
+      
+      setState(() => _saving = true);
+      final name = _nameController.text.trim();
+      final email = _emailController.text.trim();
+      final currentEditingField = _editingField; // Guardamos el campo que se está editando
+      
+      final success = await _authService.updateUser(
+        _user!.email,
+        name: currentEditingField == 'name' ? name : null,
+        newEmail: currentEditingField == 'email' ? email : null,
+        birthDate: currentEditingField == 'birthDate' ? _birthDate : null,
       );
-      setState(() {
-        _user = User(
-          email: _editingField == 'email' ? email : _user!.email,
-          password: _user!.password,
-          name: _editingField == 'name' ? name : _user!.name,
-          birthDate: _editingField == 'birthDate' ? _birthDate! : _user!.birthDate,
-          acceptedTerms: _user!.acceptedTerms,
+      
+      if (success) {
+        // Update local user data
+        setState(() {
+          _user = User(
+            email: currentEditingField == 'email' ? email : _user!.email,
+            password: _user!.password,
+            name: currentEditingField == 'name' ? name : _user!.name,
+            birthDate: currentEditingField == 'birthDate' ? _birthDate! : _user!.birthDate,
+            acceptedTerms: _user!.acceptedTerms,
+          );
+          _editingField = null;
+        });
+        
+        // Show success message
+        String message = 'Datos actualizados: ';
+        if (currentEditingField == 'name') {
+          message += 'Nombre cambiado a $name';
+        } else if (currentEditingField == 'email') {
+          message += 'Email cambiado a $email';
+        } else if (currentEditingField == 'birthDate') {
+          message += 'Fecha de nacimiento cambiada a ${_birthDate!.year}-${_birthDate!.month.toString().padLeft(2, '0')}-${_birthDate!.day.toString().padLeft(2, '0')}';
+        }
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No se pudieron actualizar los datos'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
         );
-        _editingField = null;
-      });
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update profile')),);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
     }
   }
 
@@ -340,13 +396,13 @@ class _SettingsViewState extends State<SettingsView> {
                       onTap: _pickBirthDate,
                       child: InputDecorator(
                         decoration: const InputDecoration(
-                          labelText: 'Birth Date',
+                          labelText: 'Fecha de Nacimiento',
                           border: OutlineInputBorder(),
                         ),
                         child: Text(
                           _birthDate != null
                               ? '${_birthDate!.year}-${_birthDate!.month.toString().padLeft(2, '0')}-${_birthDate!.day.toString().padLeft(2, '0')}'
-                              : 'Select date',
+                              : 'Seleccionar fecha',
                           style: TextStyle(
                             color: isDark ? Colors.white : Colors.black,
                             fontWeight: FontWeight.w500,
@@ -372,12 +428,12 @@ class _SettingsViewState extends State<SettingsView> {
                                   child: CircularProgressIndicator(strokeWidth: 2),
                                 )
                               : const Icon(Icons.save),
-                          label: const Text('Save'),
+                          label: const Text('Guardar'),
                         ),
                         const SizedBox(width: 10),
                         TextButton(
                           onPressed: _saving ? null : () => setState(() => _editingField = null),
-                          child: const Text('Cancel'),
+                          child: const Text('Cancelar'),
                         ),
                       ],
                     ),
@@ -390,7 +446,7 @@ class _SettingsViewState extends State<SettingsView> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Birth Date',
+                            'Fecha de Nacimiento',
                             style: TextStyle(
                               color: isDark ? Colors.grey[400] : Colors.grey[600],
                               fontSize: 12,
@@ -422,7 +478,7 @@ class _SettingsViewState extends State<SettingsView> {
                         child: IconButton(
                           icon: const Icon(Icons.edit, color: Colors.blue),
                           onPressed: () => setState(() => _editingField = 'birthDate'),
-                          tooltip: 'Edit Birth Date',
+                          tooltip: 'Editar Fecha de Nacimiento',
                         ),
                       ),
                     ),
