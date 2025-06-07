@@ -798,7 +798,54 @@ class _SettingsViewState extends State<SettingsView> {
             },
           ),
         ),
-        // ... rest of the settings section ...
+        const SizedBox(height: 32),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+          ),
+          onPressed: () async {
+            final confirm = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('¿Seguro que quieres borrar tu cuenta?'),
+                content: const Text('Esta acción no se puede deshacer.'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: const Text('Cancelar'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: const Text('Borrar'),
+                  ),
+                ],
+              ),
+            );
+            if (confirm == true) {
+              try {
+                await _authService.deleteAccount(_user!.email);
+                if (mounted) {
+                  Navigator.of(context).pop(); // Salir de ajustes
+                  // Opcional: cerrar sesión o navegar a login
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error al borrar la cuenta:\n${e.toString()}')),
+                  );
+                }
+              }
+            }
+          },
+          child: const Text(
+            'Eliminar cuenta',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+        ),
       ],
     );
   }
