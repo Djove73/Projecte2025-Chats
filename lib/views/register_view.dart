@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/register_viewmodel.dart';
 import 'home_view.dart';
+import 'interests_form_view.dart';
 
 class RegisterView extends StatefulWidget {
   const RegisterView({super.key});
@@ -102,11 +103,19 @@ class _RegisterViewState extends State<RegisterView> with SingleTickerProviderSt
       );
 
       if (user != null && mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
+        Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => HomeView(user: user),
+            builder: (context) => InterestsFormView(
+              onContinue: (selectedInterests) {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (context) => HomeView(user: user),
+                  ),
+                );
+                // Aquí podrías guardar los intereses en el modelo de usuario o en la base de datos
+              },
+            ),
           ),
-          (route) => false,
         );
       }
     } else if (_birthDate == null) {
@@ -123,9 +132,9 @@ class _RegisterViewState extends State<RegisterView> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF2F6FF),
+        backgroundColor: const Color(0xFF232946),
         elevation: 0.5,
         title: const Text(
           'Crear Cuenta',
@@ -134,11 +143,11 @@ class _RegisterViewState extends State<RegisterView> with SingleTickerProviderSt
             fontWeight: FontWeight.w600,
             fontSize: 22,
             letterSpacing: 1.2,
-            color: Color(0xFF1A237E),
+            color: Colors.white,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF1A237E)),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
       ),
