@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/register_viewmodel.dart';
+import '../models/user_model.dart';
 import 'home_view.dart';
 import 'interests_form_view.dart';
 
@@ -103,20 +104,35 @@ class _RegisterViewState extends State<RegisterView> with SingleTickerProviderSt
       );
 
       if (user != null && mounted) {
-        Navigator.of(context).pushReplacement(
+        final selectedInterests = await Navigator.of(context).push<List<String>>(
           MaterialPageRoute(
             builder: (context) => InterestsFormView(
-              onContinue: (selectedInterests) {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (context) => HomeView(user: user),
-                  ),
-                );
-                // Aquí podrías guardar los intereses en el modelo de usuario o en la base de datos
+              onContinue: (selected) {
+                Navigator.of(context).pop(selected);
               },
             ),
           ),
         );
+        if (selectedInterests != null && selectedInterests.isNotEmpty && mounted) {
+          final viewModel = context.read<RegisterViewModel>();
+          await viewModel.updateUserInterests(user.email, selectedInterests);
+          final userWithInterests = User(
+            email: user.email,
+            password: user.password,
+            name: user.name,
+            birthDate: user.birthDate,
+            acceptedTerms: user.acceptedTerms,
+            blockedUsers: user.blockedUsers,
+            reportedUsers: user.reportedUsers,
+            interests: selectedInterests,
+          );
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => HomeView(user: userWithInterests),
+            ),
+            (route) => false,
+          );
+        }
       }
     } else if (_birthDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
