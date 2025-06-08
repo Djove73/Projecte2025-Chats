@@ -16,33 +16,33 @@ class HomeView extends StatefulWidget {
   // Move newsSamples to the class level
   static final List<Map<String, String>> newsSamples = [
     {
-      'headline': "Breaking: Major Tech Conference Announced in Barcelona",
-      'summary': "The world's leading tech companies will gather in Barcelona for a new global conference. Stay tuned for live updates.",
-      'time': 'Just now',
-      'type': 'tech',
-    },
-    {
-      'headline': 'Stocks Surge as Markets React to Economic Data',
-      'summary': 'Global stock markets are on the rise after positive economic indicators were released this morning.',
-      'time': '5 min ago',
-      'type': 'finance',
-    },
-    {
-      'headline': 'New AI Model Sets Record in Language Understanding',
-      'summary': 'Researchers have unveiled an AI model that surpasses previous benchmarks in natural language processing.',
-      'time': '10 min ago',
+      'headline': "OpenAI lanza GPT-5: el nuevo modelo de IA revoluciona la productividad",
+      'summary': "La última versión de GPT promete transformar la forma en que trabajamos y aprendemos, con capacidades aún más avanzadas.",
+      'time': 'Hace 2 min',
       'type': 'ai',
     },
     {
-      'headline': 'Sports: Local Team Wins Championship',
-      'summary': 'Celebrations erupt as the local football team clinches the national title in a dramatic final.',
-      'time': '20 min ago',
+      'headline': 'Tesla presenta su coche eléctrico más asequible',
+      'summary': 'El nuevo modelo de Tesla busca democratizar el acceso a la movilidad eléctrica en todo el mundo.',
+      'time': 'Hace 10 min',
+      'type': 'tech',
+    },
+    {
+      'headline': 'El Ibex 35 sube un 3% tras los buenos datos de empleo',
+      'summary': 'La bolsa española reacciona positivamente a la recuperación económica y los nuevos datos de empleo.',
+      'time': 'Hace 20 min',
+      'type': 'finance',
+    },
+    {
+      'headline': 'El Barça gana la Champions en una final histórica',
+      'summary': 'El equipo azulgrana conquista Europa tras un partido épico decidido en los penaltis.',
+      'time': 'Hace 1 h',
       'type': 'sports',
     },
     {
-      'headline': 'Weather Alert: Heavy Rain Expected Tomorrow',
-      'summary': 'Meteorologists warn of heavy rainfall and possible flooding in several regions starting tomorrow.',
-      'time': '30 min ago',
+      'headline': 'Alerta meteorológica: ola de calor en toda la península',
+      'summary': 'Las autoridades recomiendan extremar precauciones ante las altas temperaturas previstas para esta semana.',
+      'time': 'Hace 2 h',
       'type': 'weather',
     },
   ];
@@ -62,6 +62,7 @@ class _HomeViewState extends State<HomeView> {
   List<User> _filteredUsers = [];
   bool _isLoading = true;
   String _searchQuery = '';
+  bool _showNewsHeader = true;
 
   @override
   void initState() {
@@ -172,18 +173,18 @@ class _HomeViewState extends State<HomeView> {
       'type': HomeView.newsSamples[i]['type']!,
     });
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF2F6FF),
+        backgroundColor: const Color(0xFF232946),
         elevation: 0.5,
-        title: const Text(
-          'REDS',
-          style: TextStyle(
+        title: Text(
+          _selectedIndex == 1 ? 'Ajustes' : 'REDS',
+          style: const TextStyle(
             fontFamily: 'Montserrat',
             fontWeight: FontWeight.w600,
             fontSize: 22,
             letterSpacing: 1.2,
-            color: Color(0xFF1A237E),
+            color: Colors.white,
           ),
         ),
         actions: [
@@ -212,20 +213,22 @@ class _HomeViewState extends State<HomeView> {
             ),
           ),
         ],
-        bottom: _selectedIndex == 0
-            ? PreferredSize(
-                preferredSize: const Size.fromHeight(70),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+      body: _selectedIndex == 0
+          ? Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
                   child: Material(
-                    elevation: 4,
+                    color: const Color(0xFF232946),
                     borderRadius: BorderRadius.circular(30),
+                    elevation: 2,
                     child: TextField(
                       controller: _searchController,
-                      style: const TextStyle(fontSize: 18, color: Colors.black),
+                      style: const TextStyle(fontSize: 18, color: Colors.white),
                       decoration: InputDecoration(
                         hintText: 'Search users...',
-                        hintStyle: const TextStyle(color: Colors.black54),
+                        hintStyle: const TextStyle(color: Colors.white54),
                         prefixIcon: const Icon(Icons.search, color: Colors.blue),
                         suffixIcon: _searchController.text.isNotEmpty
                             ? IconButton(
@@ -242,46 +245,88 @@ class _HomeViewState extends State<HomeView> {
                           borderSide: BorderSide.none,
                         ),
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: Colors.transparent,
                       ),
                     ),
                   ),
                 ),
-              )
-            : null,
-      ),
-      body: _selectedIndex == 0
-          ? (_isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _searchController.text.isEmpty
-                  ? const Center(child: Text('Type to search for users...', style: TextStyle(fontSize: 16, color: Colors.grey)))
-                  : _filteredUsers.isEmpty
-                      ? const Center(child: Text('No users found', style: TextStyle(fontSize: 18, color: Colors.grey)))
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _filteredUsers.length,
-                          itemBuilder: (context, index) {
-                            final user = _filteredUsers[index];
-                            return Card(
-                              elevation: 3,
-                              margin: const EdgeInsets.symmetric(vertical: 8),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
+                if (_showNewsHeader)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF232946),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                            child: Text(
+                              'Noticias que te puedan interesar',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500,
+                                fontSize: 15,
                               ),
-                              child: ListTile(
-                                leading: CircleAvatar(
-                                  backgroundColor: Colors.blue.shade100,
-                                  child: Text(
-                                    user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
-                                  ),
+                            ),
+                          ),
+                          const Spacer(),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white70, size: 20),
+                            onPressed: () {
+                              setState(() {
+                                _showNewsHeader = false;
+                              });
+                            },
+                            tooltip: 'Cerrar',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                Expanded(
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _searchController.text.isEmpty
+                          ? ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: HomeView.newsSamples.length,
+                              itemBuilder: (context, index) {
+                                final news = HomeView.newsSamples[index];
+                                return _buildNewsCard(context, news: news, index: index);
+                              },
+                            )
+                          : _filteredUsers.isEmpty
+                              ? const Center(child: Text('No users found', style: TextStyle(fontSize: 18, color: Colors.grey)))
+                              : ListView.builder(
+                                  padding: const EdgeInsets.all(16),
+                                  itemCount: _filteredUsers.length,
+                                  itemBuilder: (context, index) {
+                                    final user = _filteredUsers[index];
+                                    return Card(
+                                      elevation: 3,
+                                      margin: const EdgeInsets.symmetric(vertical: 8),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: ListTile(
+                                        leading: CircleAvatar(
+                                          backgroundColor: Colors.blue.shade100,
+                                          child: Text(
+                                            user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                                            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+                                          ),
+                                        ),
+                                        title: Text(user.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                        subtitle: Text(user.email),
+                                      ),
+                                    );
+                                  },
                                 ),
-                                title: Text(user.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                subtitle: Text(user.email),
-                              ),
-                            );
-                          },
-                        ))
+                ),
+              ],
+            )
           : SettingsView(user: widget.user),
       floatingActionButton: _selectedIndex == 0
           ? FloatingActionButton(
