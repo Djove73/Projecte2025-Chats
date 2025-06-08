@@ -766,14 +766,6 @@ class _SettingsViewState extends State<SettingsView> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 24),
-        Text(
-          'Settings',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.black,
-          ),
-        ),
         const SizedBox(height: 16),
         Card(
           color: cardColor,
@@ -860,17 +852,18 @@ class _SettingsViewState extends State<SettingsView> {
     }
 
     return Scaffold(
+      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF2F6FF),
+        backgroundColor: const Color(0xFF232946),
         elevation: 0.5,
-        title: Text(
-          l10n.settings,
-          style: const TextStyle(
+        title: const Text(
+          'Ajustes',
+          style: TextStyle(
             fontFamily: 'Montserrat',
             fontWeight: FontWeight.w600,
             fontSize: 22,
             letterSpacing: 1.2,
-            color: Color(0xFF1A237E),
+            color: Colors.white,
           ),
         ),
       ),
