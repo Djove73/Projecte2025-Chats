@@ -253,50 +253,110 @@ class _HomeViewState extends State<HomeView> {
                 if (_showNewsHeader)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF232946),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 10, horizontal: 14),
-                            child: Text(
-                              'Noticias que te puedan interesar',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w500,
-                                fontSize: 15,
+                    child: Column(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF232946),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            children: [
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                                child: Text(
+                                  'Noticias que te puedan interesar',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 15,
+                                  ),
+                                ),
                               ),
-                            ),
+                              const Spacer(),
+                              IconButton(
+                                icon: const Icon(Icons.close, color: Colors.white70, size: 20),
+                                onPressed: () {
+                                  setState(() {
+                                    _showNewsHeader = false;
+                                  });
+                                },
+                                tooltip: 'Cerrar',
+                              ),
+                            ],
                           ),
-                          const Spacer(),
-                          IconButton(
-                            icon: const Icon(Icons.close, color: Colors.white70, size: 20),
-                            onPressed: () {
-                              setState(() {
-                                _showNewsHeader = false;
-                              });
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          height: 135,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: HomeView.newsSamples.length,
+                            separatorBuilder: (context, i) => const SizedBox(width: 12),
+                            itemBuilder: (context, index) {
+                              final news = HomeView.newsSamples[index];
+                              return Container(
+                                width: 230,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF23242A),
+                                  borderRadius: BorderRadius.circular(14),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.08),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      news['headline']!,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      news['summary']!,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Align(
+                                      alignment: Alignment.bottomRight,
+                                      child: Text(
+                                        news['time']!,
+                                        style: const TextStyle(
+                                          color: Colors.blueAccent,
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
                             },
-                            tooltip: 'Cerrar',
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 Expanded(
                   child: _isLoading
                       ? const Center(child: CircularProgressIndicator())
                       : _searchController.text.isEmpty
-                          ? ListView.builder(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: HomeView.newsSamples.length,
-                              itemBuilder: (context, index) {
-                                final news = HomeView.newsSamples[index];
-                                return _buildNewsCard(context, news: news, index: index);
-                              },
-                            )
+                          ? const Center(child: Text('Type to search for users...', style: TextStyle(fontSize: 16, color: Colors.grey)))
                           : _filteredUsers.isEmpty
                               ? const Center(child: Text('No users found', style: TextStyle(fontSize: 18, color: Colors.grey)))
                               : ListView.builder(
@@ -354,131 +414,6 @@ class _HomeViewState extends State<HomeView> {
             label: l10n.settings,
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildNewsCard(BuildContext context, {required Map<String, String> news, int? index, bool highlight = false}) {
-    final l10n = AppLocalizations.of(context);
-    IconData icon;
-    Color iconColor;
-    switch (news['type']) {
-      case 'tech':
-        icon = Icons.memory;
-        iconColor = Colors.purpleAccent;
-        break;
-      case 'finance':
-        icon = Icons.trending_up;
-        iconColor = Colors.greenAccent;
-        break;
-      case 'ai':
-        icon = Icons.smart_toy;
-        iconColor = Colors.deepPurpleAccent;
-        break;
-      case 'sports':
-        icon = Icons.sports_soccer;
-        iconColor = Colors.orangeAccent;
-        break;
-      case 'weather':
-        icon = Icons.cloud;
-        iconColor = Colors.lightBlueAccent;
-        break;
-      default:
-        icon = Icons.flash_on;
-        iconColor = Colors.redAccent;
-    }
-    final favoritesProvider = Provider.of<FavoritesProvider>(context);
-    final newsIndex = index ?? 0;
-    final isFavorite = favoritesProvider.isFavorite(newsIndex);
-    return Card(
-      color: highlight ? Colors.amber[100] : const Color(0xFF23242A),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      elevation: highlight ? 12 : 6,
-      margin: const EdgeInsets.only(bottom: 18),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: () {
-          setState(() {
-            _highlightedNewsIndex = null;
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${l10n.processing}: ${news['headline']}')),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: iconColor.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(icon, color: iconColor, size: 26),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Text(
-                      news['headline']!,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 17,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      isFavorite ? Icons.bookmark : Icons.bookmark_border,
-                      color: isFavorite ? Colors.amber : Colors.grey[400],
-                      size: 22,
-                    ),
-                    tooltip: isFavorite ? 'Remove from favorites' : 'Add to favorites',
-                    onPressed: () {
-                      favoritesProvider.toggleFavorite(newsIndex);
-                    },
-                  ),
-                  Text(
-                    news['time']!,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.blue[200],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                news['summary']!,
-                style: const TextStyle(color: Colors.white, fontSize: 15),
-              ),
-              const SizedBox(height: 14),
-              Align(
-                alignment: Alignment.centerRight,
-                child: ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.open_in_new, size: 18, color: Colors.white),
-                  label: Text(l10n.save),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                    textStyle: const TextStyle(fontWeight: FontWeight.bold),
-                    elevation: 0,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
