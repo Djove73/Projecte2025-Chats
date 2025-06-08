@@ -7,6 +7,7 @@ import 'settings_view.dart';
 import '../l10n/app_localizations.dart';
 import '../viewmodels/favorites_provider.dart';
 import '../services/auth_service.dart';
+import '../views/notifications_view.dart';
 
 class HomeView extends StatefulWidget {
   final User user;
@@ -173,10 +174,28 @@ class _HomeViewState extends State<HomeView> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
-        elevation: 0,
-        title: const Text('REDS'),
+        backgroundColor: const Color(0xFFF2F6FF),
+        elevation: 0.5,
+        title: const Text(
+          'REDS',
+          style: TextStyle(
+            fontFamily: 'Montserrat',
+            fontWeight: FontWeight.w600,
+            fontSize: 22,
+            letterSpacing: 1.2,
+            color: Color(0xFF1A237E),
+          ),
+        ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.mail_outline),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const NotificationsView()),
+              );
+            },
+            tooltip: 'Notifications',
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => _handleLogout(context),

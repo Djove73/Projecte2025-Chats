@@ -861,7 +861,18 @@ class _SettingsViewState extends State<SettingsView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.settings),
+        backgroundColor: const Color(0xFFF2F6FF),
+        elevation: 0.5,
+        title: Text(
+          l10n.settings,
+          style: const TextStyle(
+            fontFamily: 'Montserrat',
+            fontWeight: FontWeight.w600,
+            fontSize: 22,
+            letterSpacing: 1.2,
+            color: Color(0xFF1A237E),
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),

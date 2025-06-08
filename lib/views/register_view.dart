@@ -125,11 +125,20 @@ class _RegisterViewState extends State<RegisterView> with SingleTickerProviderSt
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Crear Cuenta'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        backgroundColor: const Color(0xFFF2F6FF),
+        elevation: 0.5,
+        title: const Text(
+          'Crear Cuenta',
+          style: TextStyle(
+            fontFamily: 'Montserrat',
+            fontWeight: FontWeight.w600,
+            fontSize: 22,
+            letterSpacing: 1.2,
+            color: Color(0xFF1A237E),
+          ),
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF1A237E)),
           onPressed: () => Navigator.pop(context),
         ),
       ),
