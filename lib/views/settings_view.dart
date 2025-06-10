@@ -33,6 +33,8 @@ class _SettingsViewState extends State<SettingsView> {
   final DatabaseService _databaseService = DatabaseService();
   String? _editingField; // 'name', 'email', 'birthDate'
   bool _showAllFavorites = false;
+  int _followersCount = 0;
+  int _followingCount = 0;
 
   @override
   void initState() {
@@ -49,11 +51,15 @@ class _SettingsViewState extends State<SettingsView> {
       final email = widget.user?.email;
       if (email != null) {
         final user = widget.user;
+        final followersCount = await _authService.getFollowersCount(email);
+        final followingCount = await _authService.getFollowingCount(email);
         setState(() {
           _user = user;
           _nameController = TextEditingController(text: user?.name ?? '');
           _emailController = TextEditingController(text: user?.email ?? '');
           _birthDate = user?.birthDate;
+          _followersCount = followersCount;
+          _followingCount = followingCount;
           _loading = false;
         });
       } else {
@@ -210,68 +216,66 @@ class _SettingsViewState extends State<SettingsView> {
 
   Widget _userCard() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark
-        ? Colors.black.withOpacity(0.65)
-        : Colors.white.withOpacity(0.85);
-    final borderColor = isDark ? Colors.blue[900] : Colors.blue[200];
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hoveringCard = true),
-      onExit: (_) => setState(() => _hoveringCard = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-        margin: const EdgeInsets.only(bottom: 24),
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: borderColor!, width: 2),
-          boxShadow: [
-            BoxShadow(
-              color: isDark
-                  ? Colors.blue.withOpacity(_hoveringCard ? 0.25 : 0.15)
-                  : Colors.blue.withOpacity(_hoveringCard ? 0.18 : 0.10),
-              blurRadius: _hoveringCard ? 24 : 12,
-              offset: const Offset(0, 8),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.black.withOpacity(0.65) : Colors.white.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: isDark ? Colors.blue[900]! : Colors.blue[200]!, width: 2),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: Colors.blue,
+                  child: Text(
+                    _user?.name.isNotEmpty == true ? _user!.name[0].toUpperCase() : '?',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _user?.name ?? '',
+                        style: TextStyle(
+                          color: isDark ? Colors.white : Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _user?.email ?? '',
+                        style: TextStyle(
+                          color: isDark ? Colors.grey[300] : Colors.grey[800],
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(Icons.people, color: Colors.blue, size: 20),
+                const SizedBox(width: 6),
+                Text('Following: $_followingCount', style: TextStyle(color: isDark ? Colors.white : Colors.black)),
+                const SizedBox(width: 18),
+                Icon(Icons.person_add, color: Colors.green, size: 20),
+                const SizedBox(width: 6),
+                Text('Followers: $_followersCount', style: TextStyle(color: isDark ? Colors.white : Colors.black)),
+              ],
             ),
           ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(22),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildEditableRow(
-                icon: Icons.person,
-                label: 'Name',
-                value: _user?.name ?? '',
-                editing: _editingField == 'name',
-                controller: _nameController,
-                onEdit: () => setState(() => _editingField = 'name'),
-                onCancel: () => setState(() => _editingField = null),
-                onSave: _saveProfile,
-                saving: _saving,
-                error: _editingField == 'name' ? _error : null,
-                isDark: isDark,
-              ),
-              const SizedBox(height: 18),
-              _buildEditableRow(
-                icon: Icons.email,
-                label: 'Email',
-                value: _user?.email ?? '',
-                editing: _editingField == 'email',
-                controller: _emailController,
-                onEdit: () => setState(() => _editingField = 'email'),
-                onCancel: () => setState(() => _editingField = null),
-                onSave: _saveProfile,
-                saving: _saving,
-                error: _editingField == 'email' ? _error : null,
-                isDark: isDark,
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 18),
-              _buildBirthDateRow(isDark),
-            ],
-          ),
         ),
       ),
     );

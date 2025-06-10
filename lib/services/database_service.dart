@@ -89,6 +89,7 @@ class DatabaseService {
         'isActive': true,
         'role': 'user',
         'updatedAt': DateTime.now().toIso8601String(),
+        'interests': user.interests,
       };
 
       await _users.insert(userDoc);
@@ -239,5 +240,60 @@ class DatabaseService {
       print('Error getting reported users: $e');
       rethrow;
     }
+  }
+
+  Future<void> updateUserInterests(String email, List<String> interests) async {
+    await _users.update(
+      where.eq('email', email),
+      modify.set('interests', interests),
+    );
+  }
+
+  Future<bool> followUser(String currentUserEmail, String userToFollowEmail) async {
+    try {
+      // Add userToFollowEmail to currentUser's following
+      await _users.update(
+        where.eq('email', currentUserEmail),
+        modify.addToSet('following', userToFollowEmail),
+      );
+      // Add currentUserEmail to userToFollow's followers
+      await _users.update(
+        where.eq('email', userToFollowEmail),
+        modify.addToSet('followers', currentUserEmail),
+      );
+      return true;
+    } catch (e) {
+      print('Error following user: $e');
+      return false;
+    }
+  }
+
+  Future<bool> unfollowUser(String currentUserEmail, String userToUnfollowEmail) async {
+    try {
+      // Remove userToUnfollowEmail from currentUser's following
+      await _users.update(
+        where.eq('email', currentUserEmail),
+        modify.pull('following', userToUnfollowEmail),
+      );
+      // Remove currentUserEmail from userToUnfollow's followers
+      await _users.update(
+        where.eq('email', userToUnfollowEmail),
+        modify.pull('followers', currentUserEmail),
+      );
+      return true;
+    } catch (e) {
+      print('Error unfollowing user: $e');
+      return false;
+    }
+  }
+
+  Future<int> getFollowersCount(String userEmail) async {
+    final user = await _users.findOne(where.eq('email', userEmail));
+    return user != null && user['followers'] != null ? (user['followers'] as List).length : 0;
+  }
+
+  Future<int> getFollowingCount(String userEmail) async {
+    final user = await _users.findOne(where.eq('email', userEmail));
+    return user != null && user['following'] != null ? (user['following'] as List).length : 0;
   }
 } 

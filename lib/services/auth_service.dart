@@ -6,16 +6,41 @@ class AuthService {
   final DatabaseService _dbService = DatabaseService();
   final Dio _dio = Dio(BaseOptions(
     baseUrl: 'http://192.168.86.25:3000',
-    connectTimeout: const Duration(seconds: 15),
-    receiveTimeout: const Duration(seconds: 15),
-    sendTimeout: const Duration(seconds: 15),
+    connectTimeout: const Duration(seconds: 30),
+    receiveTimeout: const Duration(seconds: 30),
+    sendTimeout: const Duration(seconds: 30),
   ));
   bool _isInitialized = false;
+  List<User> _cachedUsers = [];
+  DateTime? _lastCacheUpdate;
 
   Future<void> _ensureInitialized() async {
     if (!_isInitialized) {
       await _dbService.connect();
       _isInitialized = true;
+    }
+  }
+
+  Future<List<User>> _updateCache() async {
+    try {
+      final response = await _dio.get(
+        '/auth/all-users',
+        options: Options(
+          validateStatus: (status) => status! < 500,
+        ),
+      );
+      
+      if (response.statusCode == 200 && response.data is List) {
+        _cachedUsers = (response.data as List)
+            .map((json) => User.fromJson(json))
+            .toList();
+        _lastCacheUpdate = DateTime.now();
+        return _cachedUsers;
+      }
+      return [];
+    } catch (e) {
+      print('Error updating cache: $e');
+      return [];
     }
   }
 
@@ -103,31 +128,23 @@ class AuthService {
   Future<List<User>> searchUsers(String query) async {
     try {
       await _ensureInitialized();
-      final response = await _dio.get(
-        '/auth/search-users',
-        queryParameters: {'query': query},
-        options: Options(
-          validateStatus: (status) => status! < 500,
-        ),
-      );
+      final users = await _dbService.getAllUsers();
       
-      if (response.statusCode == 200 && response.data is List) {
-        return (response.data as List)
-            .map((json) => User.fromJson(json))
-            .toList();
+      if (query.isEmpty) {
+        return users.map((userData) => User.fromJson(userData)).toList();
       }
-      return [];
-    } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout ||
-          e.type == DioExceptionType.sendTimeout) {
-        print('Timeout error searching users: ${e.message}');
-      } else {
-        print('Error searching users: ${e.message}');
-      }
-      return [];
+
+      return users
+          .where((userData) {
+            final name = (userData['name'] ?? '').toString().toLowerCase();
+            final email = (userData['email'] ?? '').toString().toLowerCase();
+            final searchQuery = query.toLowerCase();
+            return name.contains(searchQuery) || email.contains(searchQuery);
+          })
+          .map((userData) => User.fromJson(userData))
+          .toList();
     } catch (e) {
-      print('Unexpected error searching users: $e');
+      print('Error searching users: $e');
       return [];
     }
   }
@@ -135,5 +152,25 @@ class AuthService {
   Future<void> updateUserInterests(String email, List<String> interests) async {
     await _dbService.connect();
     await _dbService.updateUserInterests(email, interests);
+  }
+
+  Future<bool> followUser(String currentUserEmail, String userToFollowEmail) async {
+    await _ensureInitialized();
+    return await _dbService.followUser(currentUserEmail, userToFollowEmail);
+  }
+
+  Future<bool> unfollowUser(String currentUserEmail, String userToUnfollowEmail) async {
+    await _ensureInitialized();
+    return await _dbService.unfollowUser(currentUserEmail, userToUnfollowEmail);
+  }
+
+  Future<int> getFollowersCount(String userEmail) async {
+    await _ensureInitialized();
+    return await _dbService.getFollowersCount(userEmail);
+  }
+
+  Future<int> getFollowingCount(String userEmail) async {
+    await _ensureInitialized();
+    return await _dbService.getFollowingCount(userEmail);
   }
 } 

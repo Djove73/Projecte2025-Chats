@@ -12,11 +12,19 @@ class UsersListView extends StatefulWidget {
 class _UsersListViewState extends State<UsersListView> {
   List<User> _users = [];
   bool _isLoading = true;
+  String? _currentUserEmail;
 
   @override
   void initState() {
     super.initState();
-    _fetchUsers();
+    // TODO: Replace with actual logic to get current user email
+    // For now, try to get from ModalRoute arguments or similar
+    Future.delayed(Duration.zero, () {
+      setState(() {
+        _currentUserEmail = ModalRoute.of(context)?.settings.arguments as String?;
+      });
+      _fetchUsers();
+    });
   }
 
   Future<void> _fetchUsers() async {
@@ -33,6 +41,25 @@ class _UsersListViewState extends State<UsersListView> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al cargar usuarios: $e')),
+      );
+    }
+  }
+
+  Future<void> _toggleFollow(User user) async {
+    if (_currentUserEmail == null || user.email == _currentUserEmail) return;
+    final authService = AuthService();
+    final isFollowing = user.followers.contains(_currentUserEmail);
+    bool success;
+    if (isFollowing) {
+      success = await authService.unfollowUser(_currentUserEmail!, user.email);
+    } else {
+      success = await authService.followUser(_currentUserEmail!, user.email);
+    }
+    if (success) {
+      await _fetchUsers();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error updating follow status')),
       );
     }
   }
@@ -54,6 +81,8 @@ class _UsersListViewState extends State<UsersListView> {
                   itemCount: _users.length,
                   itemBuilder: (context, index) {
                     final user = _users[index];
+                    final isMe = user.email == _currentUserEmail;
+                    final isFollowing = user.followers.contains(_currentUserEmail);
                     return Card(
                       color: const Color(0xFF232946),
                       elevation: 2,
@@ -70,6 +99,19 @@ class _UsersListViewState extends State<UsersListView> {
                           ),
                         ),
                         title: Text(user.name, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                        trailing: isMe
+                            ? null
+                            : ElevatedButton(
+                                onPressed: () => _toggleFollow(user),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: isFollowing ? Colors.grey : Colors.blue,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: Text(isFollowing ? 'Unfollow' : 'Follow'),
+                              ),
                       ),
                     );
                   },

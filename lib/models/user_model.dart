@@ -7,6 +7,8 @@ class User {
   final List<String> blockedUsers;
   final List<String> reportedUsers;
   final List<String> interests;
+  final List<String> followers;
+  final List<String> following;
 
   User({
     required this.email,
@@ -17,6 +19,8 @@ class User {
     this.blockedUsers = const [],
     this.reportedUsers = const [],
     this.interests = const [],
+    this.followers = const [],
+    this.following = const [],
   });
 
   Map<String, dynamic> toJson() {
@@ -29,6 +33,8 @@ class User {
       'blockedUsers': blockedUsers,
       'reportedUsers': reportedUsers,
       'interests': interests,
+      'followers': followers,
+      'following': following,
     };
   }
 
@@ -44,6 +50,8 @@ class User {
       blockedUsers: List<String>.from(json['blockedUsers'] ?? []),
       reportedUsers: List<String>.from(json['reportedUsers'] ?? []),
       interests: List<String>.from(json['interests'] ?? []),
+      followers: List<String>.from(json['followers'] ?? []),
+      following: List<String>.from(json['following'] ?? []),
     );
   }
 } 
