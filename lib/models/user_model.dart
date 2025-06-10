@@ -6,6 +6,7 @@ class User {
   final bool acceptedTerms;
   final List<String> blockedUsers;
   final List<String> reportedUsers;
+  final List<String> interests;
 
   User({
     required this.email,
@@ -15,6 +16,7 @@ class User {
     required this.acceptedTerms,
     this.blockedUsers = const [],
     this.reportedUsers = const [],
+    this.interests = const [],
   });
 
   Map<String, dynamic> toJson() {
@@ -26,18 +28,22 @@ class User {
       'acceptedTerms': acceptedTerms,
       'blockedUsers': blockedUsers,
       'reportedUsers': reportedUsers,
+      'interests': interests,
     };
   }
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      email: json['email'],
-      password: json['password'],
-      name: json['name'],
-      birthDate: DateTime.parse(json['birthDate']),
-      acceptedTerms: json['acceptedTerms'],
+      email: (json['email'] ?? '').toString(),
+      password: (json['password'] ?? '').toString(),
+      name: (json['name'] ?? '').toString(),
+      birthDate: json['birthDate'] != null && json['birthDate'].toString().isNotEmpty
+          ? DateTime.parse(json['birthDate'])
+          : DateTime(2000, 1, 1),
+      acceptedTerms: json['acceptedTerms'] ?? false,
       blockedUsers: List<String>.from(json['blockedUsers'] ?? []),
       reportedUsers: List<String>.from(json['reportedUsers'] ?? []),
+      interests: List<String>.from(json['interests'] ?? []),
     );
   }
 } 

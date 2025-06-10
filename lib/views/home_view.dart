@@ -8,6 +8,7 @@ import '../l10n/app_localizations.dart';
 import '../viewmodels/favorites_provider.dart';
 import '../services/auth_service.dart';
 import '../views/notifications_view.dart';
+import 'users_list_view.dart';
 
 class HomeView extends StatefulWidget {
   final User user;
@@ -100,7 +101,7 @@ class _HomeViewState extends State<HomeView> {
         _scrollToNews(widget.initialNewsIndex!);
       });
     }
-    _fetchUsers();
+    _initializeSearch();
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -147,23 +148,32 @@ class _HomeViewState extends State<HomeView> {
     }
   }
 
-  void _onSearchChanged() async {
-    if (_searchController.text.trim().isEmpty) {
-      setState(() {
-        _searchQuery = '';
-        _filteredUsers = [];
-        _isLoading = false;
-      });
-      return;
+  Future<void> _initializeSearch() async {
+    setState(() => _isLoading = true);
+    try {
+      final users = await AuthService().searchUsers('');
+      if (mounted) {
+        setState(() {
+          _allUsers = users;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
+  }
 
+  void _onSearchChanged() async {
+    final query = _searchController.text.trim();
     setState(() {
-      _searchQuery = _searchController.text.trim().toLowerCase();
+      _searchQuery = query.toLowerCase();
       _isLoading = true;
     });
     
     try {
-      final users = await AuthService().searchUsers(_searchQuery);
+      final users = await AuthService().searchUsers(query);
       if (mounted) {
         setState(() {
           _filteredUsers = users;
@@ -187,19 +197,6 @@ class _HomeViewState extends State<HomeView> {
     }
   }
 
-  Future<void> _fetchUsers() async {
-    setState(() => _isLoading = true);
-    try {
-      final users = await AuthService().getAllUsers();
-      setState(() {
-        _allUsers = users;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -214,7 +211,7 @@ class _HomeViewState extends State<HomeView> {
         backgroundColor: const Color(0xFF232946),
         elevation: 0.5,
         title: Text(
-          _selectedIndex == 1 ? 'Ajustes' : 'REDS',
+          _selectedIndex == 1 ? 'Ajustes' : _selectedIndex == 2 ? 'Usuarios' : 'REDS',
           style: const TextStyle(
             fontFamily: 'Montserrat',
             fontWeight: FontWeight.w600,
@@ -263,7 +260,7 @@ class _HomeViewState extends State<HomeView> {
                       controller: _searchController,
                       style: const TextStyle(fontSize: 18, color: Colors.white),
                       decoration: InputDecoration(
-                        hintText: 'Search users...',
+                        hintText: 'Buscar usuarios...',
                         hintStyle: const TextStyle(color: Colors.white54),
                         prefixIcon: const Icon(Icons.search, color: Colors.blue),
                         suffixIcon: _searchController.text.isNotEmpty
@@ -271,6 +268,7 @@ class _HomeViewState extends State<HomeView> {
                                 icon: const Icon(Icons.clear, color: Colors.grey),
                                 onPressed: () {
                                   _searchController.clear();
+                                  _onSearchChanged();
                                   FocusScope.of(context).unfocus();
                                 },
                               )
@@ -283,6 +281,7 @@ class _HomeViewState extends State<HomeView> {
                         filled: true,
                         fillColor: Colors.transparent,
                       ),
+                      onChanged: (value) => _onSearchChanged(),
                     ),
                   ),
                 ),
@@ -457,7 +456,9 @@ class _HomeViewState extends State<HomeView> {
                 ),
               ],
             )
-          : SettingsView(user: widget.user),
+          : _selectedIndex == 1
+              ? SettingsView(user: widget.user)
+              : const UsersListView(),
       floatingActionButton: _selectedIndex == 0
           ? FloatingActionButton(
               backgroundColor: Colors.blue,
@@ -482,6 +483,10 @@ class _HomeViewState extends State<HomeView> {
           BottomNavigationBarItem(
             icon: const Icon(Icons.settings),
             label: l10n.settings,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.person),
+            label: 'Usuarios',
           ),
         ],
       ),
