@@ -88,10 +88,14 @@ class _HomeViewState extends State<HomeView> {
   bool _isLoading = true;
   String _searchQuery = '';
   bool _showNewsHeader = true;
+  int _followersCount = 0;
+  int _followingCount = 0;
+  final GlobalKey<SettingsViewState> _settingsKey = GlobalKey<SettingsViewState>();
 
   @override
   void initState() {
     super.initState();
+    _initializeCounters();
     if (widget.initialNewsIndex != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         setState(() {
@@ -195,6 +199,20 @@ class _HomeViewState extends State<HomeView> {
         );
       }
     }
+  }
+
+  Future<void> _initializeCounters() async {
+    final authService = AuthService();
+    final followersCount = await authService.getFollowersCount(widget.user.email);
+    final followingCount = await authService.getFollowingCount(widget.user.email);
+    setState(() {
+      _followersCount = followersCount;
+      _followingCount = followingCount;
+    });
+  }
+
+  void _updateCounters() async {
+    await _initializeCounters();
   }
 
   @override
@@ -457,8 +475,8 @@ class _HomeViewState extends State<HomeView> {
               ],
             )
           : _selectedIndex == 1
-              ? SettingsView(user: widget.user)
-              : const UsersListView(),
+              ? SettingsView(user: widget.user, followersCount: _followersCount, followingCount: _followingCount)
+              : UsersListView(currentUserEmail: widget.user.email, onFollowChanged: _updateCounters),
       floatingActionButton: _selectedIndex == 0
           ? FloatingActionButton(
               backgroundColor: Colors.blue,

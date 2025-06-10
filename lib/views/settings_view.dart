@@ -15,13 +15,15 @@ import 'login_view.dart';
 
 class SettingsView extends StatefulWidget {
   final User? user;
-  const SettingsView({super.key, this.user});
+  final int followersCount;
+  final int followingCount;
+  const SettingsView({super.key, this.user, this.followersCount = 0, this.followingCount = 0});
 
   @override
-  State<SettingsView> createState() => _SettingsViewState();
+  State<SettingsView> createState() => SettingsViewState();
 }
 
-class _SettingsViewState extends State<SettingsView> {
+class SettingsViewState extends State<SettingsView> {
   late TextEditingController _nameController;
   late TextEditingController _emailController;
   DateTime? _birthDate;
@@ -39,7 +41,16 @@ class _SettingsViewState extends State<SettingsView> {
   @override
   void initState() {
     super.initState();
+    _followersCount = widget.followersCount;
+    _followingCount = widget.followingCount;
     _initializeAndFetchUser();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh counters when coming back to settings
+    refreshCounters();
   }
 
   Future<void> _initializeAndFetchUser() async {
@@ -70,6 +81,17 @@ class _SettingsViewState extends State<SettingsView> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error initializing: $e')),
       );
+    }
+  }
+
+  Future<void> refreshCounters() async {
+    if (_user?.email != null) {
+      final followersCount = await _authService.getFollowersCount(_user!.email);
+      final followingCount = await _authService.getFollowingCount(_user!.email);
+      setState(() {
+        _followersCount = followersCount;
+        _followingCount = followingCount;
+      });
     }
   }
 
