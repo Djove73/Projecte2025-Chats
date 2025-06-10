@@ -37,12 +37,15 @@ class SettingsViewState extends State<SettingsView> {
   bool _showAllFavorites = false;
   int _followersCount = 0;
   int _followingCount = 0;
+  List<User> _followersList = [];
+  List<User> _followingList = [];
+  bool _showFollowers = false;
+  bool _showFollowing = false;
 
   @override
   void initState() {
     super.initState();
-    _followersCount = widget.followersCount;
-    _followingCount = widget.followingCount;
+    _fetchFollowersAndFollowing();
     _initializeAndFetchUser();
   }
 
@@ -84,13 +87,29 @@ class SettingsViewState extends State<SettingsView> {
     }
   }
 
+  Future<void> _fetchFollowersAndFollowing() async {
+    if (widget.user?.email != null) {
+      final followers = await _authService.getFollowers(widget.user!.email);
+      final following = await _authService.getFollowing(widget.user!.email);
+      setState(() {
+        _followersList = followers;
+        _followingList = following;
+      });
+    }
+  }
+
+  @override
   Future<void> refreshCounters() async {
-    if (_user?.email != null) {
-      final followersCount = await _authService.getFollowersCount(_user!.email);
-      final followingCount = await _authService.getFollowingCount(_user!.email);
+    if (widget.user?.email != null) {
+      final followersCount = await _authService.getFollowersCount(widget.user!.email);
+      final followingCount = await _authService.getFollowingCount(widget.user!.email);
+      final followers = await _authService.getFollowers(widget.user!.email);
+      final following = await _authService.getFollowing(widget.user!.email);
       setState(() {
         _followersCount = followersCount;
         _followingCount = followingCount;
+        _followersList = followers;
+        _followingList = following;
       });
     }
   }
@@ -290,13 +309,41 @@ class SettingsViewState extends State<SettingsView> {
               children: [
                 Icon(Icons.people, color: Colors.blue, size: 20),
                 const SizedBox(width: 6),
-                Text('Following: $_followingCount', style: TextStyle(color: isDark ? Colors.white : Colors.black)),
+                GestureDetector(
+                  onTap: () => setState(() => _showFollowing = !_showFollowing),
+                  child: Text('Following: $_followingCount', style: TextStyle(color: isDark ? Colors.white : Colors.black, decoration: TextDecoration.underline)),
+                ),
                 const SizedBox(width: 18),
                 Icon(Icons.person_add, color: Colors.green, size: 20),
                 const SizedBox(width: 6),
-                Text('Followers: $_followersCount', style: TextStyle(color: isDark ? Colors.white : Colors.black)),
+                GestureDetector(
+                  onTap: () => setState(() => _showFollowers = !_showFollowers),
+                  child: Text('Followers: $_followersCount', style: TextStyle(color: isDark ? Colors.white : Colors.black, decoration: TextDecoration.underline)),
+                ),
               ],
             ),
+            if (_showFollowing)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Following:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ..._followingList.map((u) => Text(u.name.isNotEmpty ? u.name : u.email, style: TextStyle(color: isDark ? Colors.white : Colors.black))).toList(),
+                  ],
+                ),
+              ),
+            if (_showFollowers)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Followers:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ..._followersList.map((u) => Text(u.name.isNotEmpty ? u.name : u.email, style: TextStyle(color: isDark ? Colors.white : Colors.black))).toList(),
+                  ],
+                ),
+              ),
           ],
         ),
       ),

@@ -3,7 +3,9 @@ import '../services/auth_service.dart';
 import '../models/user_model.dart';
 
 class UsersListView extends StatefulWidget {
-  const UsersListView({Key? key}) : super(key: key);
+  final String currentUserEmail;
+  final VoidCallback? onFollowChanged;
+  const UsersListView({Key? key, required this.currentUserEmail, this.onFollowChanged}) : super(key: key);
 
   @override
   State<UsersListView> createState() => _UsersListViewState();
@@ -12,19 +14,11 @@ class UsersListView extends StatefulWidget {
 class _UsersListViewState extends State<UsersListView> {
   List<User> _users = [];
   bool _isLoading = true;
-  String? _currentUserEmail;
 
   @override
   void initState() {
     super.initState();
-    // TODO: Replace with actual logic to get current user email
-    // For now, try to get from ModalRoute arguments or similar
-    Future.delayed(Duration.zero, () {
-      setState(() {
-        _currentUserEmail = ModalRoute.of(context)?.settings.arguments as String?;
-      });
-      _fetchUsers();
-    });
+    _fetchUsers();
   }
 
   Future<void> _fetchUsers() async {
@@ -46,21 +40,40 @@ class _UsersListViewState extends State<UsersListView> {
   }
 
   Future<void> _toggleFollow(User user) async {
-    if (_currentUserEmail == null || user.email == _currentUserEmail) return;
+    final _currentUserEmail = widget.currentUserEmail;
+    if (_currentUserEmail == user.email) return;
     final authService = AuthService();
     final isFollowing = user.followers.contains(_currentUserEmail);
     bool success;
+    setState(() {
+      // Optimistically update the UI
+      if (isFollowing) {
+        user.followers.remove(_currentUserEmail);
+      } else {
+        user.followers.add(_currentUserEmail);
+      }
+    });
     if (isFollowing) {
-      success = await authService.unfollowUser(_currentUserEmail!, user.email);
+      success = await authService.unfollowUser(_currentUserEmail, user.email);
     } else {
-      success = await authService.followUser(_currentUserEmail!, user.email);
+      success = await authService.followUser(_currentUserEmail, user.email);
     }
-    if (success) {
-      await _fetchUsers();
-    } else {
+    if (!success) {
+      // Revert if failed
+      setState(() {
+        if (isFollowing) {
+          user.followers.add(_currentUserEmail);
+        } else {
+          user.followers.remove(_currentUserEmail);
+        }
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error updating follow status')),
       );
+    } else {
+      // Always re-fetch users from DB to ensure state is correct
+      await _fetchUsers();
+      if (widget.onFollowChanged != null) widget.onFollowChanged!();
     }
   }
 
@@ -81,8 +94,8 @@ class _UsersListViewState extends State<UsersListView> {
                   itemCount: _users.length,
                   itemBuilder: (context, index) {
                     final user = _users[index];
-                    final isMe = user.email == _currentUserEmail;
-                    final isFollowing = user.followers.contains(_currentUserEmail);
+                    final isMe = user.email == widget.currentUserEmail;
+                    final isFollowing = user.followers.contains(widget.currentUserEmail);
                     return Card(
                       color: const Color(0xFF232946),
                       elevation: 2,
