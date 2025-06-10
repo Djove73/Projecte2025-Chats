@@ -6,8 +6,9 @@ class AuthService {
   final DatabaseService _dbService = DatabaseService();
   final Dio _dio = Dio(BaseOptions(
     baseUrl: 'http://192.168.86.25:3000',
-    connectTimeout: Duration(seconds: 5),
-    receiveTimeout: Duration(seconds: 5),
+    connectTimeout: const Duration(seconds: 15),
+    receiveTimeout: const Duration(seconds: 15),
+    sendTimeout: const Duration(seconds: 15),
   ));
   bool _isInitialized = false;
 
@@ -97,5 +98,42 @@ class AuthService {
     } catch (e) {
       throw 'Error fetching users';
     }
+  }
+
+  Future<List<User>> searchUsers(String query) async {
+    try {
+      await _ensureInitialized();
+      final response = await _dio.get(
+        '/auth/search-users',
+        queryParameters: {'query': query},
+        options: Options(
+          validateStatus: (status) => status! < 500,
+        ),
+      );
+      
+      if (response.statusCode == 200 && response.data is List) {
+        return (response.data as List)
+            .map((json) => User.fromJson(json))
+            .toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        print('Timeout error searching users: ${e.message}');
+      } else {
+        print('Error searching users: ${e.message}');
+      }
+      return [];
+    } catch (e) {
+      print('Unexpected error searching users: $e');
+      return [];
+    }
+  }
+
+  Future<void> updateUserInterests(String email, List<String> interests) async {
+    await _dbService.connect();
+    await _dbService.updateUserInterests(email, interests);
   }
 } 

@@ -19,31 +19,55 @@ class HomeView extends StatefulWidget {
       'headline': "OpenAI lanza GPT-5: el nuevo modelo de IA revoluciona la productividad",
       'summary': "La última versión de GPT promete transformar la forma en que trabajamos y aprendemos, con capacidades aún más avanzadas.",
       'time': 'Hace 2 min',
-      'type': 'ai',
+      'type': 'IA',
     },
     {
       'headline': 'Tesla presenta su coche eléctrico más asequible',
       'summary': 'El nuevo modelo de Tesla busca democratizar el acceso a la movilidad eléctrica en todo el mundo.',
       'time': 'Hace 10 min',
-      'type': 'tech',
+      'type': 'Tecnología',
     },
     {
       'headline': 'El Ibex 35 sube un 3% tras los buenos datos de empleo',
       'summary': 'La bolsa española reacciona positivamente a la recuperación económica y los nuevos datos de empleo.',
       'time': 'Hace 20 min',
-      'type': 'finance',
+      'type': 'Finanzas',
     },
     {
       'headline': 'El Barça gana la Champions en una final histórica',
       'summary': 'El equipo azulgrana conquista Europa tras un partido épico decidido en los penaltis.',
       'time': 'Hace 1 h',
-      'type': 'sports',
+      'type': 'Deportes',
     },
     {
       'headline': 'Alerta meteorológica: ola de calor en toda la península',
       'summary': 'Las autoridades recomiendan extremar precauciones ante las altas temperaturas previstas para esta semana.',
       'time': 'Hace 2 h',
-      'type': 'weather',
+      'type': 'Actualidad',
+    },
+    {
+      'headline': 'Descubren una nueva partícula en el CERN',
+      'summary': 'Científicos del CERN anuncian el hallazgo de una partícula subatómica que podría cambiar la física moderna.',
+      'time': 'Hace 3 h',
+      'type': 'Ciencia',
+    },
+    {
+      'headline': 'Los destinos más populares para viajar este verano',
+      'summary': 'Una guía de los lugares más demandados por los viajeros en 2024.',
+      'time': 'Hace 4 h',
+      'type': 'Viajes',
+    },
+    {
+      'headline': 'Nuevos avances en medicina personalizada',
+      'summary': 'La medicina personalizada permite tratamientos más efectivos y menos invasivos.',
+      'time': 'Hace 5 h',
+      'type': 'Salud',
+    },
+    {
+      'headline': 'La película del año arrasa en taquilla',
+      'summary': 'El último estreno de Hollywood bate récords de recaudación en su primer fin de semana.',
+      'time': 'Hace 6 h',
+      'type': 'Entretenimiento',
     },
   ];
 
@@ -124,28 +148,42 @@ class _HomeViewState extends State<HomeView> {
   }
 
   void _onSearchChanged() async {
-    setState(() {
-      _searchQuery = _searchController.text.trim().toLowerCase();
-      _isLoading = true;
-    });
-    if (_searchQuery.isEmpty) {
+    if (_searchController.text.trim().isEmpty) {
       setState(() {
+        _searchQuery = '';
         _filteredUsers = [];
         _isLoading = false;
       });
       return;
     }
+
+    setState(() {
+      _searchQuery = _searchController.text.trim().toLowerCase();
+      _isLoading = true;
+    });
+    
     try {
       final users = await AuthService().searchUsers(_searchQuery);
-      setState(() {
-        _filteredUsers = users;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _filteredUsers = users;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _filteredUsers = [];
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _filteredUsers = [];
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al buscar usuarios: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 
@@ -155,7 +193,6 @@ class _HomeViewState extends State<HomeView> {
       final users = await AuthService().getAllUsers();
       setState(() {
         _allUsers = users;
-        _filteredUsers = users;
         _isLoading = false;
       });
     } catch (e) {
@@ -166,12 +203,11 @@ class _HomeViewState extends State<HomeView> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final List<Map<String, String>> localizedNews = List.generate(5, (i) => {
-      'headline': l10n.getNewsHeadline(i + 1),
-      'summary': l10n.getNewsSummary(i + 1),
-      'time': HomeView.newsSamples[i]['time']!,
-      'type': HomeView.newsSamples[i]['type']!,
-    });
+    // Filtrar noticias según intereses del usuario
+    final List<String> userInterests = widget.user.interests;
+    final List<Map<String, String>> filteredNews = userInterests.isEmpty
+        ? HomeView.newsSamples
+        : HomeView.newsSamples.where((n) => userInterests.contains(n['type'])).toList();
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
@@ -291,10 +327,10 @@ class _HomeViewState extends State<HomeView> {
                           height: 135,
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
-                            itemCount: HomeView.newsSamples.length,
+                            itemCount: filteredNews.length,
                             separatorBuilder: (context, i) => const SizedBox(width: 12),
                             itemBuilder: (context, index) {
-                              final news = HomeView.newsSamples[index];
+                              final news = filteredNews[index];
                               return Container(
                                 width: 230,
                                 decoration: BoxDecoration(
@@ -354,11 +390,36 @@ class _HomeViewState extends State<HomeView> {
                   ),
                 Expanded(
                   child: _isLoading
-                      ? const Center(child: CircularProgressIndicator())
+                      ? const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CircularProgressIndicator(),
+                              SizedBox(height: 16),
+                              Text(
+                                'Buscando usuarios...',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
                       : _searchController.text.isEmpty
-                          ? const Center(child: Text('Type to search for users...', style: TextStyle(fontSize: 16, color: Colors.grey)))
+                          ? const Center(
+                              child: Text(
+                                'Escribe para buscar usuarios...',
+                                style: TextStyle(fontSize: 16, color: Colors.grey),
+                              ),
+                            )
                           : _filteredUsers.isEmpty
-                              ? const Center(child: Text('No users found', style: TextStyle(fontSize: 18, color: Colors.grey)))
+                              ? const Center(
+                                  child: Text(
+                                    'No se encontraron usuarios',
+                                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                                  ),
+                                )
                               : ListView.builder(
                                   padding: const EdgeInsets.all(16),
                                   itemCount: _filteredUsers.length,
@@ -380,6 +441,15 @@ class _HomeViewState extends State<HomeView> {
                                         ),
                                         title: Text(user.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                                         subtitle: Text(user.email),
+                                        trailing: IconButton(
+                                          icon: const Icon(Icons.message_outlined),
+                                          onPressed: () {
+                                            // TODO: Implementar funcionalidad de mensaje
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Funcionalidad de mensaje en desarrollo')),
+                                            );
+                                          },
+                                        ),
                                       ),
                                     );
                                   },
