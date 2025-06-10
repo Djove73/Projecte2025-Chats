@@ -173,4 +173,22 @@ class AuthService {
     await _ensureInitialized();
     return await _dbService.getFollowingCount(userEmail);
   }
+
+  Future<List<User>> getFollowers(String userEmail) async {
+    await _ensureInitialized();
+    final user = (await _dbService.getAllUsers()).firstWhere((u) => u['email'] == userEmail, orElse: () => {});
+    if (user.isEmpty) return [];
+    final followersEmails = List<String>.from(user['followers'] ?? []);
+    final allUsers = await _dbService.getAllUsers();
+    return allUsers.where((u) => followersEmails.contains(u['email'])).map((u) => User.fromJson(u)).toList();
+  }
+
+  Future<List<User>> getFollowing(String userEmail) async {
+    await _ensureInitialized();
+    final user = (await _dbService.getAllUsers()).firstWhere((u) => u['email'] == userEmail, orElse: () => {});
+    if (user.isEmpty) return [];
+    final followingEmails = List<String>.from(user['following'] ?? []);
+    final allUsers = await _dbService.getAllUsers();
+    return allUsers.where((u) => followingEmails.contains(u['email'])).map((u) => User.fromJson(u)).toList();
+  }
 } 
